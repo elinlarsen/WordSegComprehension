@@ -6,7 +6,12 @@ Created on Thu Dec 15 11:45:59 2016
 """
 
 import collections
-from itertools import izip
+try:
+    # Python 2
+    from itertools import izip
+except ImportError:
+    # Python 3
+    izip = zip
 import pandas as pd
 
 #import file
@@ -36,7 +41,7 @@ def build_phono_to_ortho(phono_file, ortho_file):
                             count_freq[word_ortho] += 1
                         except:
                             count_freq[word_ortho] = 1
-    print "There were {} errors".format(count_errors)
+    print("There were {} errors".format(count_errors))
     return d
 
 

@@ -1,0 +1,253 @@
+---
+title: "WordSegAnalysis"
+author: "Elin Larsen"
+date: "11/12/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+## Analysis of word segmentation algorithms output 
+
+This R Markdown document is aimed at analyzing word segmentation algorithms output relatively to reported infant word comprehension. 
+
+*PART 1: preping the data*
+
+
+**Lexical classes in CDI ** 
+
+```{r}
+library(readr)
+lexClass <- read_delim("~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/CDI_data/CDI_lexical_classes.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+head(lexClass)
+
+barplot(prop.table(table(lexClass)))
+```
+
+**CDI words**
+```{r}
+cdi_words <- as.data.frame(lexClass$Type)
+colnames(cdi_words)=c("Type")
+head(cdi_words)
+```
+
+**Concreteness in 40 K english words and in CDI**
+```{r}
+conc <- read_delim("~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/concreteness_2_classes.csv", "\t", escape_double = FALSE, trim_ws = TRUE)%>%
+  select(Type,Conc.M)%>%
+  mutate(Conc.cat=round(Conc.M, digits=0))
+
+head(conc)
+hist(conc$Conc.cat, main ="Histogram of concretenesss in 40 K english words")
+
+conc_cdi<- merge(conc, cdi_words, by="Type")
+head(conc_cdi)
+hist(conc_cdi$Conc.cat, main ="Histogram of concretenesss in CDI words")
+```
+
+**Redefine concreteness into two categories**
+```{r}
+conc_cdi$Conc.cat<-gsub("1",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("2",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("3",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("4",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("5",1, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<- as.factor(conc_cdi$Conc.cat)
+#barplot(conc_cdi$Conc.cat, main ="Histogram of binary concretenesss in CDI words")
+```
+
+**Word length : mono versus polysyllabic words**
+```{r}
+wordLength_cdi <- read_delim("~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/Mono_poly_CDI.csv", "\t", escape_double = FALSE, trim_ws = TRUE)%>%
+  rename(length=num_syllables)%>%
+  select(Type, length)
+
+#wordLength_cdi$length<-gsub("mono", 0, wordLength_cdi$length)
+#wordLength_cdi$length<-gsub("poly", 1, wordLength_cdi$length)
+wordLength_cdi<-as.data.frame(wordLength_cdi)
+head(wordLength_cdi)
+wordLength_cdi$length<- as.factor(wordLength_cdi$length) # super important to specify this variable as being factor
+barplot(prop.table(table(lexClass)),main="Frequency of monosyllabic versus polysyllabic CDI words", xlab="Monosyllabic versus Polysyllabic words")
+```
+
+**Proportion of infants reported to understand a word in CDI at different ages**
+```{r, echo=TRUE, results='hide'}
+library(readr)
+prop_cdi <- read_delim("~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/CDI_data/PropUnderstandCDI.csv", "\t", escape_double = FALSE, trim_ws = TRUE) %>%
+  select(Type, prop,age)
+
+prop_cdi$age<-as.factor(prop_cdi$age)
+
+```
+
+
+**Number of occurrence of word correctly segmented by each algo**
+```{r, include=FALSE}
+algos=c('TPs','DiBs','PUDDLE','AGu', 'gold')
+path_res='~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/full_corpus/'
+path_ortho="~/Google Drive/CDSwordSeg_Pipeline/recipes/childes/data/Brent/ortholines.txt"
+datalist = list()
+L=length(algos)
+for (j in 1:L)
+    { 
+      algo=algos[j] #get data about algo results
+      file_freq=paste(path_res, '/',algo,'/', "syllable",'/freq-words.txt', sep="")
+      freq=read_delim(file=file_freq, "\t", escape_double = FALSE, trim_ws = TRUE)
+      freq$unit <- "syllable"  
+      freq$algos<-algo
+      datalist[[j]] <- freq
+}
+
+for (j in 1:L)
+    { 
+      algo=algos[j] #get data about algo results
+      file_freq=paste(path_res, '/',algo,'/', "phoneme",'/freq-words.txt', sep="")
+      freq=read_delim(file=file_freq, "\t", escape_double = FALSE, trim_ws = TRUE)
+      freq$unit <- "phoneme"  
+      freq$algos<-algo
+      datalist[[L+j]] <- freq
+}
+
+```
+
+```{r}
+freq_algos <- dplyr::bind_rows(datalist)
+head(freq_algos)
+dim(freq_algos)
+```
+
+**Final dataset containging all variables**
+```{r}
+dat= merge(wordLength_cdi, conc_cdi, by="Type")
+dat=merge(dat,as.data.frame(lexClass), by="Type")
+dat=merge(dat, as.data.frame(freq_algos), by= "Type")
+dat=merge(dat, as.data.frame(prop_cdi), by="Type")%>%
+ rename(lc=lexical_classes)%>%
+ select(Type,prop, Conc.cat, length, lc,age, unit, algos, Freq)
+head(dat)
+table(dat$lc, dat$length)
+```
+
+
+*PART 2 : Visualizing the data*
+```{r, include=FALSE}
+require(ggplot2)
+```
+
+***For 13 mo infants***
+```{r}
+theme_set(theme_bw(base_size = 18))
+
+dat13<- dat %>% filter(age == 13)
+qplot(length, log(Freq), facets = . ~ algos, 
+      colour = algos, geom = "boxplot", data = dat13)
+
+qplot(unit, log(Freq), facets = . ~ algos, 
+      colour = algos, geom = "boxplot", data = dat13)
+
+qplot(length, prop, facets = . ~ lc, 
+      colour = lc, geom = "boxplot", data = dat13)
+
+qplot(length, prop, facets = . ~ Conc.cat, 
+      colour = Conc.cat, geom = "boxplot", data = dat13)
+
+qplot(Conc.cat, prop, facets = . ~ lc, 
+      colour = lc, geom = "boxplot", data = dat13)
+```
+
+***Evolution with time of the effect of word length, concreteness and lexical classes***
+```{r}
+qplot(length, prop, facets = . ~ age, 
+      colour = age, geom = "boxplot", data = dat)
+
+qplot(as.factor(age), prop, facets = . ~ lc, 
+      colour = lc, geom = "boxplot", data = dat)
+
+qplot(Conc.cat, prop, facets = . ~ age, 
+      colour = age, geom = "boxplot", data = dat)
+```
+
+
+***Distribution of the dependant variable***
+```{r}
+for (i in c(8:18))
+{
+dat_i=dat %>% filter(age == i)
+qplot(prop, colour = prop, geom="density", data=dat_i)
+}
+```
+
+
+*PART 3 : Linear regression*
+
+The data are clearly not balanced ! See for instance : 
+```{r}
+table(dat$lc, dat$length)
+table(dat$Conc.cat, dat$length)
+table(dat$age, dat$algos)
+```
+
+
+```{r}
+require(lme4)
+```
+
+**model per algo per age**
+```{r, include=FALSE}
+Linear_model=function(path_res, ages, algos, prop, infant_nb,unit)
+{ 
+  res=data.frame(matrix(nrow=length(algos), ncol = length(ages)))
+  colnames(res)=ages
+  rownames(res)=algos
+
+  for (i in 1:length(ages))
+  {
+    Age=ages[i]
+    df=subset(prop,age==Age, select=c(prop,Type))
+    for (j in 1:length(algos))
+    {
+      algo=algos[j] #get data about algo results
+      file_freq=paste(path_res, '/',algo,'/', unit,'/freq-words.txt', sep="")
+      freq=read.table(file=file_freq, header=TRUE)
+      #combining data
+      dat=merge(df, freq, by.y='Type', all=TRUE)
+      model=lm(prop ~ log(Freq), data=dat)
+      res[j,i]=summary(model)$r.squared
+    }
+  }
+}
+```
+
+**Linear mixed effect model**
+
+***Model 0 : fixed effect of Frequency and random effect of algo, ages and unit***
+```{r}
+head(dat)
+fit0=lmer(prop ~ log(Freq) + (1|age) +(log(Freq)|algos) +(log(Freq)|unit) , data=dat, REML = TRUE)
+summary(fit0)
+
+```
+
+**Comparing models**
+```{r}
+fit_conc <- lmer(prop ~ log(Freq) + (1|age) +(log(Freq)|algos) +(log(Freq)|unit) + Conc.cat , data=dat, REML = TRUE)
+fit_length <- lmer(prop ~ log(Freq) + (1|age) +(log(Freq)|algos) +(log(Freq)|unit) + length , data=dat, REML = TRUE)
+fit_lc <- lmer(prop ~ log(Freq) + (1|age) +(log(Freq)|algos) +(log(Freq)|unit) + lc , data=dat, REML = TRUE)
+fit_total <- lmer(prop ~ log(Freq) + (1|age) +(log(Freq)|algos) +(log(Freq)|unit) + Conc.cat+ length + lc, data=dat, REML = TRUE)
+anova(fit0, fit_conc, fit_length, fit_lc, fit_totalt)
+```
+
+**Fitting a separate model for concreteness, length and lexixcal class**
+```{r, include=FALSE}
+require(plyr)
+```
+
+```{r}
+modellist <- dlply(dat, .(Conc.cat, length, lc), function(x) lmer(prop ~ 1 + log(Freq) + (1|age) +(1|algos), data = x))
+print(modellist[[1]])
+print(modellist[[2]])
+print(modellist[[3]])
+```

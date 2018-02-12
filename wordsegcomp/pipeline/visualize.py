@@ -5,8 +5,6 @@ Created on Thu Dec 15 17:14:22 2016
 @author: elinlarsen
 """
 
-import os
-import plotly 
 #plotly must have downloaded  cf https://plot.ly/python/getting-started/
 # open spyder from terminal !
 import plotly.plotly as py
@@ -18,15 +16,10 @@ import pandas as pd
 # Scientific libraries
 import numpy as np
 from scipy import stats
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
 
-#import file
-os.chdir('/Users/elinlarsen/Documents/CDSwordSeg/ElinDev')
 import read
 import analyze
-import model
+
 
 def plot_algos_CDI_by_age(path_ortho,path_res, sub=["full_corpus"], algos=["dibs", "TPs", "puddle", "AGu"], unit="syllable",ages=8, CDI_file="PropUnderstandCDI.csv",freq_file="/freq-words.txt", name_vis="plot"):
     data=[]
@@ -534,11 +527,7 @@ def plot_R2_by_parameter_for_one_age(R2, std_err, algos, unit, name_vis):
 
             x=algos
             y=R2.groupby('unit').get_group(u)[p].values
-            err=std_err.groupby('unit').get_group(u)[p].values
-            print u 
-            print p
-            print err
-                   
+            err=std_err.groupby('unit').get_group(u)[p].values                   
             trace=go.Scatter(
                     x=x,
                     y=y,

@@ -7,7 +7,6 @@ Created on Thu Dec 15 11:47:40 2016
 
 import numpy as np
 import collections
-import inspect
 import pandas as pd
 from collections import Counter
 
@@ -22,7 +21,7 @@ def count_lines_corpus(corpus_file):
         for line in text:
             if line.strip():
                 non_blank_count+=1
-    print 'number of non-blank lines found: %d' % non_blank_count
+    print('number of non-blank lines found: %d' % non_blank_count)
     return(non_blank_count)
 
 def create_freq_top_gold(path_res, subs):
@@ -46,21 +45,6 @@ def freq_token_in_corpus(path_file):
     df.reset_index(drop=True, inplace=True)
     return(df)
 
-'''
- count_freq={}
-with open(ortho_file,'r') as ortho:
-    for line in ortho:
-        for word in line.split():
-            try:
-                count_freq[word]+=1
-            except:
-                count_freq[word]=1
-df=DataFrame(count_freq.items(), columns=['Type', 'Freq'])
-df_sorted=df.sort('Freq', ascending=False)
-df_sorted.rename(columns={'Freq': 'Freqgold'}, inplace=True)
-df_sorted['Type']=df_sorted['Type'].str.lower()
-df_sorted.reset_index(drop=True, inplace=True)
-'''
 
 ######################### SPLIT BETWEEN BAD AND WELL SEGMENTED TOKEN
 #  by checking if they belong to the dictionnary
@@ -275,7 +259,7 @@ def common_type_in_all_sub(sub, path_data,name_gold="ortholines.txt"):
             count_freq[token]+=1 # count the frequency of the token common in ALL in the LAST subcorpus
         except:
             count_freq[token]=1
-    print" There are {} types in common in all sub-corpus".format(len(count_freq))
+    print("There are {} types in common in all sub-corpus".format(len(count_freq)))
     file.write("Number of words that are in all subs :" + str(len(count_freq))+"\n"+"\n")
     for i in range(len(count_freq)):
         file.write(count_freq.keys()[i]+ " "+ str(count_freq.values()[i]) + "\n")

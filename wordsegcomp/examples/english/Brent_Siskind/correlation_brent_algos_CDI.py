@@ -9,46 +9,46 @@ import os
 import pandas as pd
 
 # importing python scripts
-os.chdir('/Users/elinlarsen/Documents/CDSwordSeg/ElinDev')
+
+#PUT your directory path where the wordSegComprehension package is stored
+PATH_PIPELINE="/Users/elinlarsen/Google Drive/"
+os.chdir(PATH_PIPELINE + '/WordSegComprehension/wordsegcomp/pipeline')
+
 import translate
 import visualize
 import model
-import categorize
+import get_lexical_class
 import analyze
 import read
 
-reload(visualize)
-from CDI import prop
 # parameters
 from CDI import df_CDI_lexical_classes
 from CDI import length_type
-from CDI import cat_concreteness
-from CDI import cat_babiness
 
 
-os.chdir('/Users/elinlarsen/Documents/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/')
+#PUT your directory storing results from word segmentation algorithm directory here 
+path_res='/Users/elinlarsen/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS'
+#folder directory storing the results for the correlation
+folder_res="Analysis_algos_CDI"
+os.chdir(path_res+folder_res)
+path_ortho="/Users/elinlarsen/Google Drive/CDSwordSeg_Pipeline/recipes/childes/data/Brent/ortholines.txt"
+path_gold="/Users/elinlarsen/Google Drive/CDSwordSeg_Pipeline/recipes/childes/data/Brent/gold.txt"
+
 
 # *******  parameters *****
-path_res='/Users/elinlarsen/Documents/CDSwordSeg_Pipeline/results/res-brent-CDS'
-path_ortho="/Users/elinlarsen/Documents/CDSwordSeg_Pipeline/recipes/childes/data/Brent/ortholines.txt"
-path_gold="/Users/elinlarsen/Documents/CDSwordSeg_Pipeline/recipes/childes/data/Brent/gold.txt"
-
-ALGOS=['tps','dibs','puddle_py','AGu', 'gold']
-ALGOS_=['tps','dibs','puddle_py','AGu']
+ALGOS=['TPs','DiBs','PUDDLE','AGu', 'gold']
 SUB=['full_corpus']
 SUBS=['sub0','sub1','sub2','sub3','sub4','sub5','sub6','sub7','sub8','sub9']
 lexical_classes=['nouns','function_words', 'adjectives', 'verbs', 'other']
 unit="syllable"
-CDI_file="CDI_data/PropUnderstandCDI.csv"
-#CDI_file="CDI_data/PropProduceCDI.csv"
+CDI_file="CDI_data/PropUnderstandCDI.csv" #CDI_file="CDI_data/PropProduceCDI.csv"
 freq_file="/freq-words.txt"
 nb_i_file="CDI_data/CDI_NbInfantByAge"
-ages=range(8,19)
-#ages=range(16, 31)
+ages=range(8,19) #ages=range(16, 31)
 df_gold=analyze.freq_token_in_corpus(path_ortho)
 
 ##get lexical classes of the corpus 
-df_lc_corpus=categorize.part_of_seech_tagger(path_file=path_ortho)
+df_lc_corpus=get_lexical_class.part_of_seech_tagger(path_file=path_ortho)
 df_gold_lc=pd.merge(df_gold, df_lc_corpus, on="Type", how="inner")
 df_gold_lc.columns=['Type', 'Freqgold', 'abbrev_tags', 'lexical_class']
 
@@ -57,7 +57,7 @@ d=translate.build_phono_to_ortho(path_gold,path_ortho)
 dic_corpus= translate.build_phono_to_ortho_representative(d)[0]
 
 
-#algo resultas
+#algo results
 df_tp=read.create_df_freq_by_algo_all_sub(path_res, ['full_corpus'], 'tps','syllable', freq_file="/freq-words.txt")
 df_CDI=read.read_CDI_data_by_age(CDI_file, age=8, save_file=False) #age does not matter here
         
@@ -103,10 +103,10 @@ std_err_log=pd.concat([std_err_log_syl, std_err_log_ph])
 
 
 # for one subcorpus (length divided by 10) => looking at the effect size of the corpus
-R2_ALGOs_CDI_sub0=model.linear_algo_CDI(path_ortho,path_res,["sub0"], ALGOS, "", range(8,19), CDI_file, freq_file, evaluation='true_positive', miss_inc=False)['R2']
-std_err_ALGOs_CDI_sub0=model.linear_algo_CDI(path_ortho,path_res,["sub0"], ALGOS, "", range(8,19), CDI_file, freq_file, evaluation='true_positive', miss_inc=False)['std_err']
+R2_ALGOs_CDI_sub0=model.linear_algo_CDI(path_ortho,path_res,["sub0"], ALGOS, "", ages, CDI_file, freq_file, evaluation='true_positive', miss_inc=False)['R2']
+std_err_ALGOs_CDI_sub0=model.linear_algo_CDI(path_ortho,path_res,["sub0"], ALGOS, "",ages, CDI_file, freq_file, evaluation='true_positive', miss_inc=False)['std_err']
 
-results_sub0=model.linear_algo_CDI(path_ortho,path_res,["sub0"], ALGOS, "", range(8,19), CDI_file, freq_file, evaluation='true_positive', miss_inc=False)
+results_sub0=model.linear_algo_CDI(path_ortho,path_res,["sub0"], ALGOS, "",ages, CDI_file, freq_file, evaluation='true_positive', miss_inc=False)
 
 len(results_sub0['df_data'])
 
@@ -114,7 +114,7 @@ len(results_sub0['df_data'])
 # *******  Visualisation *******
 ### scatter plot
 
-visualize.plot_algos_CDI_by_age(path_ortho,path_res, False , ALGOS +['gold'], range(8,19), CDI_file,freq_file,name_vis= "CDIScore_AlgoScore_sans_fit")
+visualize.plot_algos_CDI_by_age(path_ortho,path_res, False , ALGOS +['gold'],ages, CDI_file,freq_file,name_vis= "CDIScore_AlgoScore_sans_fit")
 
 visualize.plot_algos_CDI_by_age(path_ortho,path_res, ["full_corpus"], ALGOS,[8,18], CDI_file,freq_file, name_vis="plot_all_algos")
 
@@ -130,13 +130,12 @@ visualize.plot_bar_R2_algos_unit_by_age(R2_lin[[13,'unit']], std_err_lin[[13,'un
 #production for different ages
 visualize.plot_bar_R2_algos_unit_by_age(R2_log, std_err_log, ages,ALGOS, ['syllable', 'phoneme'],name_vis="Logistic Reg with infant lexicon production for 16-30-month-old ")
 
-visualize.plot_bar_R2_algos_unit_by_age(R2_log, std_err_log, range(8,19),ALGOS, ['syllable', 'phoneme'], name_vis="LOG R2 ALGOs versus CDI with phoneme representation")
+visualize.plot_bar_R2_algos_unit_by_age(R2_log, std_err_log,ages,ALGOS, ['syllable', 'phoneme'], name_vis="LOG R2 ALGOs versus CDI with phoneme representation")
 
 # miss included
 R2_lin_missed=pd.concat([lin_missed_syll, lin_missed_ph])
 std_err_missed=pd.concat([lin_missed_syll_err, lin_missed_ph_err])
-
-visualize.plot_bar_R2_algos_unit_by_age(R2_lin_missed, std_err_missed, range(8,19), ALGOS, ['syllable', 'phoneme'],name_vis="R2 ALGOs versus CDI - syllable and phoneme - missed word by algo included")
+visualize.plot_bar_R2_algos_unit_by_age(R2_lin_missed, std_err_missed,ages, ALGOS, ['syllable', 'phoneme'],name_vis="R2 ALGOs versus CDI - syllable and phoneme - missed word by algo included")
 
 
 ### Lexical classes

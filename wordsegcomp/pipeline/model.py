@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 from sklearn.linear_model import LogisticRegression
+
 #from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
@@ -90,7 +91,6 @@ def linear_algo_CDI_phono(path_phono,path_res, sub, algos, unit,ages, CDI_file,f
             else : 
                 path=path_res+"/"+sub+"/"+algo+"/" + unit + freq_file
                 tp=pd.read_table(path, sep='\s+', index_col=None, names=['Type', 'Freq'+algo])
-                print tp
 
                 if evaluation=='true_positive': 
                     df_algo=tp
@@ -104,7 +104,6 @@ def linear_algo_CDI_phono(path_phono,path_res, sub, algos, unit,ages, CDI_file,f
                 df_data=df_data.fillna(1) # log(1)=0
             else:
                 df_data=pd.merge(df_CDI, df_algo, on=['Type'], how='inner')
-            print df_data
             x=np.log(df_data['Freq'+algo])
             y=df_data['prop']
             slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
@@ -215,6 +214,7 @@ def R2_by_parameter(path_res, sub, algos,unit, ages, df_type_parameter, which_pa
     results['std_err']=Err
     results['pvalue']=pvalue
     results['df_data']=df_data
+    results['y_fitted']=y_fit
                        
     return(results)
 
