@@ -1,0 +1,5 @@
+
+* Evaluation phoneme
+
+Algorithm	type_fscore	type_recall	type_precision	token_fscore	token_recall	token_precision	boundary_fscore	boundary_recall	boundary_precision
+--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------

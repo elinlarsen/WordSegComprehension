@@ -1,0 +1,12 @@
+
+* Evaluation phoneme
+
+Algorithm	type_fscore	type_recall	type_precision	token_fscore	token_recall	token_precision	boundary_fscore	boundary_recall	boundary_precision
+--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------
+wordseg.algos.tp	0.17	0.26	0.13	0.47	0.51	0.43	0.66	0.74	0.59
+wordseg.algos.tp	0.15	0.24	0.11	0.37	0.41	0.33	0.58	0.67	0.51
+wordseg.algos.tp	0.084	0.18	0.055	0.31	0.31	0.31	0.53	0.53	0.53
+wordseg.algos.tp	0.059	0.16	0.036	0.25	0.24	0.26	0.46	0.43	0.48
+wordseg.algos.dibs	0.07	0.15	0.046	0.27	0.3	0.25	0.51	0.57	0.45
+wordseg.algos.puddle	0.45	0.46	0.44	0.69	0.73	0.65	0.81	0.88	0.75
+wordseg.algos.baseline	0.085	0.32	0.049	0.096	0.13	0.077	0.34	0.5	0.26

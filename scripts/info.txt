@@ -1,0 +1,3 @@
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+140.94705200195312

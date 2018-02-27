@@ -1,0 +1,9 @@
+type_fscore	0.24466000000000002
+boundary_fscore	0.5905199999999999
+type_precision	0.15456
+token_fscore	0.34731999999999996
+boundary_recall	0.43009000000000003
+token_precision	0.45994999999999997
+type_recall	0.58743
+boundary_precision	0.9418300000000001
+token_recall	0.27901000000000004

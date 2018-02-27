@@ -1,0 +1,6 @@
+
+* Evaluation phone
+
+Algorithm	type_fscore	type_recall	type_precision	token_fscore	token_recall	token_precision	boundary_fscore	boundary_recall	boundary_precision
+--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------
+wordseg.algos.puddle	0.44	0.44	0.43	0.68	0.73	0.64	0.81	0.88	0.74

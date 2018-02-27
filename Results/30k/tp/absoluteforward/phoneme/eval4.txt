@@ -1,0 +1,9 @@
+token_precision	0.3085
+token_recall	0.3132
+token_fscore	0.3108
+type_precision	0.07127
+type_recall	0.1943
+type_fscore	0.1043
+boundary_precision	0.5305
+boundary_recall	0.5418
+boundary_fscore	0.5361

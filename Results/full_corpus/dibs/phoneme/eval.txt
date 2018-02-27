@@ -1,0 +1,6 @@
+
+* Evaluation phoneme
+
+Algorithm	type_fscore	type_recall	type_precision	token_fscore	token_recall	token_precision	boundary_fscore	boundary_recall	boundary_precision
+--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------	--------------
+wordseg.algos.dibs	0.057	0.16	0.035	0.24	0.24	0.23	0.47	0.48	0.46

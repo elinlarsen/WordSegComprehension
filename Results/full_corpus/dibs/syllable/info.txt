@@ -1,0 +1,15 @@
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+83.51669788360596
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+83.70921897888184
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+86.36478590965271
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+83.47452282905579
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+35.28722405433655

@@ -1,0 +1,10 @@
+algorithm	type_fscore	type_recall	type_precision	token_fscore	token_recall	token_precision	boundary_fscore	boundary_recall	boundary_precision
+ag	0.69	0.69	0.69	0.83	0.85	0.81	0.92	0.94	0.89
+baseline	0.23	0.59	0.14	0.41	0.36	0.48	0.61	0.5	0.77
+dibs	0.54	0.49	0.61	0.73	0.81	0.67	0.87	1	0.77
+dpseg	0.43	0.6	0.33	0.58	0.49	0.7	0.71	0.56	0.95
+puddle	0.25	0.36	0.19	0.69	0.62	0.78	0.81	0.7	0.96
+tp/absoluteforward	0.45	0.53	0.39	0.68	0.63	0.72	0.83	0.76	0.91
+tp/absolutebackward	0.33	0.42	0.27	0.61	0.56	0.67	0.78	0.69	0.9
+tp/relativeforward	0.26	0.56	0.17	0.34	0.27	0.45	0.58	0.42	0.94
+tp/relativebackward	0.19	0.41	0.12	0.3	0.24	0.41	0.55	0.39	0.94

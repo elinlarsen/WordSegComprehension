@@ -1,0 +1,210 @@
+starting wordseg.algos.tp
+wordseg.algos.tp done
+69.42836689949036
+starting wordseg.algos.tp
+wordseg.algos.tp done
+69.85845398902893
+starting wordseg.algos.tp
+wordseg.algos.tp done
+72.06546902656555
+starting wordseg.algos.tp
+wordseg.algos.tp done
+68.27828693389893
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+11.641494035720825
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+42.56332182884216
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+14.378392934799194
+starting wordseg.algos.tp
+wordseg.algos.tp done
+62.389071226119995
+starting wordseg.algos.tp
+wordseg.algos.tp done
+62.9965660572052
+starting wordseg.algos.tp
+wordseg.algos.tp done
+62.06082105636597
+starting wordseg.algos.tp
+wordseg.algos.tp done
+62.53536677360535
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+11.18345308303833
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+40.826542139053345
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+14.012228012084961
+starting wordseg.algos.tp
+wordseg.algos.tp done
+60.15623116493225
+starting wordseg.algos.tp
+wordseg.algos.tp done
+60.52987718582153
+starting wordseg.algos.tp
+wordseg.algos.tp done
+59.791110038757324
+starting wordseg.algos.tp
+wordseg.algos.tp done
+59.869274854660034
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+10.687102794647217
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+38.92384314537048
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+13.1683669090271
+starting wordseg.algos.tp
+wordseg.algos.tp done
+64.45884490013123
+starting wordseg.algos.tp
+wordseg.algos.tp done
+62.08988809585571
+starting wordseg.algos.tp
+wordseg.algos.tp done
+61.85288715362549
+starting wordseg.algos.tp
+wordseg.algos.tp done
+62.11052894592285
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+10.929172992706299
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+38.74810481071472
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+13.254101991653442
+starting wordseg.algos.tp
+wordseg.algos.tp done
+2912.6863808631897
+starting wordseg.algos.tp
+wordseg.algos.tp done
+64.0524570941925
+starting wordseg.algos.tp
+wordseg.algos.tp done
+63.461714029312134
+starting wordseg.algos.tp
+wordseg.algos.tp done
+63.25792694091797
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+10.718712091445923
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+38.35646414756775
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+13.20576000213623
+starting wordseg.algos.tp
+wordseg.algos.tp done
+63.809317111968994
+starting wordseg.algos.tp
+wordseg.algos.tp done
+63.64645195007324
+starting wordseg.algos.tp
+wordseg.algos.tp done
+63.06988000869751
+starting wordseg.algos.tp
+wordseg.algos.tp done
+63.239778995513916
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+11.403980016708374
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+39.65826392173767
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+13.87067699432373
+starting wordseg.algos.tp
+wordseg.algos.tp done
+65.0564980506897
+starting wordseg.algos.tp
+wordseg.algos.tp done
+64.79738807678223
+starting wordseg.algos.tp
+wordseg.algos.tp done
+63.94561290740967
+starting wordseg.algos.tp
+wordseg.algos.tp done
+64.93086194992065
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+11.248516082763672
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+41.400408029556274
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+14.770977973937988
+starting wordseg.algos.tp
+wordseg.algos.tp done
+66.45057916641235
+starting wordseg.algos.tp
+wordseg.algos.tp done
+65.87384986877441
+starting wordseg.algos.tp
+wordseg.algos.tp done
+69.15003395080566
+starting wordseg.algos.tp
+wordseg.algos.tp done
+71.17381119728088
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+12.925794839859009
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+45.89894700050354
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+15.856000185012817
+starting wordseg.algos.tp
+wordseg.algos.tp done
+66.62860488891602
+starting wordseg.algos.tp
+wordseg.algos.tp done
+66.79862594604492
+starting wordseg.algos.tp
+wordseg.algos.tp done
+66.15890407562256
+starting wordseg.algos.tp
+wordseg.algos.tp done
+65.79593110084534
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+12.392329931259155
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+41.60323691368103
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+15.026561975479126
+starting wordseg.algos.tp
+wordseg.algos.tp done
+65.66015005111694
+starting wordseg.algos.tp
+wordseg.algos.tp done
+66.74845504760742
+starting wordseg.algos.tp
+wordseg.algos.tp done
+66.49447703361511
+starting wordseg.algos.tp
+wordseg.algos.tp done
+66.41225099563599
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+12.15588092803955
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+42.618515968322754
+starting wordseg.algos.baseline
+wordseg.algos.baseline done
+15.304508924484253

@@ -1,0 +1,6 @@
+starting wordseg.algos.puddle
+wordseg.algos.puddle done
+134.20694208145142
+starting wordseg.algos.dibs
+wordseg.algos.dibs done
+44.13399600982666
