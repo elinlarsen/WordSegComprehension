@@ -21,7 +21,7 @@ library(langcog)
 #library(feather)
 
 path_to_figures="/Users/elinlarsen/Google Drive/PhD_elin/our_papers/CogSci2018/figures"
-path_to_CDI="~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/CDI_data/"
+path_to_CDI="/Users/elinlarsen/Google Drive/CDSwordseg_Pipeline/CDI_wordbank/"
 ```
 ## Analysis of CDI database
 
@@ -31,20 +31,27 @@ path_to_CDI="~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_a
 ```{r,  echo=FALSE, message=FALSE}
 ### 1. get full per item per infant per age data
 #data_per_infant <- get_instrument_data("English (American)", "WG", administrations = TRUE, iteminfo = TRUE) *** If R version < 3.4***
-data_per_infant<- read_csv("/Users/elinlarsen/Google Drive/CDSwordseg_Pipeline/CDI_wordbank/instrument_data.csv")
+data_per_infant<- read_csv(paste(path_to_CDI, "/instrument_data.csv", sep=""))
 data_per_infant[is.na(data_per_infant)] <- "NA"
+
+###2. change format of data comprehension
 d_comprehension<-data_per_infant%>%
   filter(type == "word", value %in% c("NA", "understands"))%>%
   rename(comprehension=value)
 d_comprehension$comprehension[d_comprehension$comprehension=="NA"]=0
 d_comprehension$comprehension[d_comprehension$comprehension=="understands"]=1
-head(d_comprehension)
-###2. checks if there is the same number of item_id (ie word) per age###
+
+
+###3. checks if there is the same number of item_id (ie word) per age###
 grouped_by_item<- d_comprehension%>%
   group_by(item_id)
 grouped_by_item_age<- d_comprehension%>%
   group_by(item_id, age)
+
+###3. rename definition by "Type" (i;e word type)
 names(d_comprehension)[names(d_comprehension)=="definition"] <- "Type"
+
+head(d_comprehension)
 ```
 ***Number of parental reports per age***
 ```{r,  echo=FALSE, message=FALSE}
@@ -64,10 +71,12 @@ for (a in ages)
 }
 return(df)
 }
+df=get_parental_reports_nb_per_age=function(data_CDI, ages=c(8:18))
+print(df)
 ```
 
 *** Sample CDI reports to have the same number across ages***
-```{r}
+```{r, echo=FALSE, message=FALSE}
 #names(d_comprehension)[names(d_comprehension)=="definition"] <- "Type"
 dd<-d_comprehension%>%
     filter(age==8)%>%
@@ -115,7 +124,7 @@ sampling_CDI_reports=function(data, sample_size, age_to_sample_at=13)
 
 ```
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 average_sampling_CDI_reports=function(data, sample_size, age_to_sample_at=13, nb_of_sample=10)
 {
   #Arguments : 
@@ -172,7 +181,7 @@ by_word_type=function(data, sample_size, range_of_age, average=TRUE, nb_of_sampl
 }
 ```
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 #test
 t<-sampling_CDI_reports(d_comprehension, 20, c(18))
 #average_sampling_CDI_reports(d_comprehension, 50, c(13), 10)
@@ -185,7 +194,7 @@ dim(t)
 
 
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 distrib_infant_ages<- read_delim("/Users/elinlarsen/Google Drive/CDSwordseg_Pipeline/CDI_wordbank/CDI_NbInfantByAge.csv", ";", escape_double = FALSE, trim_ws = TRUE)
 
 png(paste(path_to_figures, "/Nb_infants_ages.png", sep="" ), width=1600,height=1200, res=200 )
