@@ -40,7 +40,7 @@ d_comprehension<-data_per_infant%>%
   rename(comprehension=value)
 d_comprehension$comprehension[d_comprehension$comprehension=="NA"]=0
 d_comprehension$comprehension[d_comprehension$comprehension=="understands"]=1
-
+d_comprehension$comprehension=as.integer(d_comprehension$comprehension)
 
 ###3. checks if there is the same number of item_id (ie word) per age###
 grouped_by_item<- d_comprehension%>%
@@ -53,6 +53,7 @@ names(d_comprehension)[names(d_comprehension)=="definition"] <- "Type"
 
 head(d_comprehension)
 ```
+
 ***Number of parental reports per age***
 ```{r,  echo=FALSE, message=FALSE}
 
@@ -75,125 +76,7 @@ df=get_parental_reports_nb_per_age=function(data_CDI, ages=c(8:18))
 print(df)
 ```
 
-*** Sample CDI reports to have the same number across ages***
-```{r, echo=FALSE, message=FALSE}
-#names(d_comprehension)[names(d_comprehension)=="definition"] <- "Type"
-dd<-d_comprehension%>%
-    filter(age==8)%>%
-    group_by(Type)%>%
-    do(prop(x=.$comprehension))%>%
-    mutate(age=8)
-for (a in c(9:18))
-{
-  d<-d_comprehension%>%
-    filter(age==a)%>%
-    group_by(Type)%>%
-    do(prop(x=.$comprehension))%>%
-    mutate(age=a)
-  dd=rbind(dd,d)
-}
-dd
-```
-
-```{r, echo=FALSE, message=FALSE }
-prop=function(x)
-{
-  prop=mean(x)
-  return(as.data.frame(prop))
-}
-
-sampling_CDI_reports=function(data, sample_size, age_to_sample_at=13)
-{
-  #Sample the number of parental reports ie infant id
-  #Arguments : 
-  #  data: dataframe containing as columns "Type", "prop", "age", etc
-  #  sample_size: number of parental reports for each ages
-  d<-data%>%
-    filter(age==age_to_sample_at)
-  sampled_data_id=sample(d$data_id, sample_size, replace=FALSE)
-  length(sampled_data_id)
-  sampled<-data%>%
-      filter(data_id %in% sampled_data_id)%>%
-      group_by(Type)%>%
-      #mutate(age=age_to_sample_at)%>%
-      do(prop(x=.$comprehension))%>%
-      mutate(age=age_to_sample_at)%>%
-      ungroup()
-  return(sampled)
-}
-
-```
-
-```{r, echo=FALSE, message=FALSE}
-average_sampling_CDI_reports=function(data, sample_size, age_to_sample_at=13, nb_of_sample=10)
-{
-  #Arguments : 
-  #  data: dataframe containing as columns "Type", "prop", "age", etc
-  #  sample_size: number of parental reports for each ages
-  # age_to_sample : age at which filter the dataset
-  # nb_of_sample : number of sample to average on 
-  
-  #initialisation
-  average=sampling_CDI_reports(data, sample_size, age_to_sample_at)
-  prop_sample=average # dataframe in which all proportion samples will be stored
-  
-  if (nb_of_sample!=1)
-  {  
-    #iteration if the number of sample >1
-    for (n in seq(2, nb_of_sample, 1))
-    {
-      s=sampling_CDI_reports(data, sample_size, age_to_sample_at)
-      prop_sample[paste("prop", n, sep="")]=s$prop
-    }
-  }
-  else
-  {}
-
-  myvars <- names(prop_sample) %in% c("Type", "age") #excluding Type and age
-  new <- prop_sample[!myvars]
-  average$mean=apply(new, 1, mean)  
-  average$sd=apply(new, 1, sd)
-  return(average)
-}
-
-by_word_type=function(data, sample_size, range_of_age, average=TRUE, nb_of_sample=10)
-#if average=TRUE, compute the proportion of reported infant to understand a word for "sample_size" CDI reports averaged on "nb_of_sampled" sampled
-{
-  age0=range_of_age[1]
-
-  #initiation  
-  if (average==TRUE)
-    {by_word=average_sampling_CDI_reports(data, sample_size, age0, nb_of_sample)}
-  else
-    {by_word=sampling_CDI_reports(data, sample_size, age0)}
-
-  #iteration 
-  for (a in range_of_age[-1])
-  {
-    if (average==TRUE)
-    {by_word_by_age=average_sampling_CDI_reports(data, sample_size, a, nb_of_sample)}
-    else
-    {by_word_by_age=sampling_CDI_reports(data, sample_size, a)}
-    by_word=rbind(by_word, by_word_by_age)
-  }
- names(by_word)[names(by_word)=="Type"] <- "Type"
- return(by_word)
-}
-```
-
-```{r, echo=FALSE, message=FALSE}
-#test
-t<-sampling_CDI_reports(d_comprehension, 20, c(18))
-#average_sampling_CDI_reports(d_comprehension, 50, c(13), 10)
-#dat_mean_sampled=by_word_type(d_comprehension, 66, c(8:18), TRUE, 10)
-#test=by_word_type(d_comprehension, 66, c(8:18), TRUE, 10)
-head(t)
-dim(t)
-```
-
-
-
-
+*** Histogram number of parental reports per age ***
 ```{r, echo=FALSE, message=FALSE}
 distrib_infant_ages<- read_delim("/Users/elinlarsen/Google Drive/CDSwordseg_Pipeline/CDI_wordbank/CDI_NbInfantByAge.csv", ";", escape_double = FALSE, trim_ws = TRUE)
 
@@ -217,6 +100,136 @@ ggplot(data=distrib_infant_ages, aes(x=age, y=NbInfant)) +
 dev.off()
 ```
 
+*** Sample CDI reports to have the same number across ages***
+```{r, echo=FALSE, message=FALSE }
+prop=function(x)
+{
+  prop=mean(x)
+  return(as.data.frame(prop))
+}
+sampling_CDI_reports=function(data, sample_size, age_to_sample_at=13)
+{
+  #Sample the number of parental reports ie infant id for a given age "age_to_sample_at"
+  #Arguments : 
+  #  data: dataframe containing as columns "Type", "prop", "age", etc
+  #  sample_size: int, number of parental reports for a given age
+  #  age_to_sample_at: int between 8 and 18
+  
+  d_age<- data%>%
+    filter(age==age_to_sample_at)
+  
+  infants_id<-d_age%>%
+    group_by(data_id)%>%
+    tally()%>%
+    select(data_id)
+
+  sampled_data_id=sample(infants_id$data_id, sample_size, replace=FALSE)
+  
+  sampled<-d_age%>%
+      filter(data_id %in% sampled_data_id)
+  
+  return(sampled)
+}
+```
+
+
+*** Add a prop column : proportion of infant reported to understand a word  ***
+```{r}
+add_prop_column=function(data_sampled, age_sampled_at)
+{
+  prop<-data_sampled%>%
+      group_by(Type)%>%
+      do(prop(x=.$comprehension))%>%
+      mutate(age=age_sampled_at)%>%
+      ungroup()
+  return(prop)
+}
+```
+
+```{r}
+#test
+s=sampling_CDI_reports(d_comprehension, 17, age_to_sample_at=8)
+p=add_prop_column(s, 8)
+p
+```
+
+```{r, echo=FALSE, message=FALSE}
+average_sampling_CDI_reports=function(data, sample_size, age_to_sample_at=13, nb_of_sample=10)
+{
+  #Arguments : 
+  #  data: dataframe containing as columns "Type", "prop", "age", etc
+  #  sample_size: number of parental reports for each ages
+  # age_to_sample_at : age at which filter the dataset
+  # nb_of_sample : number of sample to average on 
+  
+  #initialisation
+  average=sampling_CDI_reports(data, sample_size, age_to_sample_at)
+  average=add_prop_column(average, age_to_sample_at)
+  prop_sample=average # dataframe in which all proportion samples will be stored
+  
+  if (nb_of_sample!=1)
+  {  
+    #iteration if the number of sample >1
+    for (n in seq(2, nb_of_sample, 1))
+    {
+      s=sampling_CDI_reports(data, sample_size, age_to_sample_at)
+      s=add_prop_column(s, age_to_sample_at)
+      prop_sample[paste("prop", n, sep="")]=s$prop
+    }
+  }
+  else
+  {}
+
+  myvars <- names(prop_sample) %in% c("Type", "age") #excluding Type and age
+  new <- prop_sample[!myvars]
+  average$mean=apply(new, 1, mean)  
+  average$sd=apply(new, 1, sd)
+  return(average)
+}
+
+by_word_type=function(data, sample_size, range_of_age, average=TRUE, nb_of_sample=10)
+#if average=TRUE, compute the proportion of reported infant to understand a word for "sample_size" CDI reports averaged on "nb_of_sampled" sampled
+{
+  age0=range_of_age[1]
+
+  #initiation  
+  if (average==TRUE)
+    {by_word=average_sampling_CDI_reports(data, sample_size, age0, nb_of_sample)}
+  else
+  {
+   s=sampling_CDI_reports(data, sample_size, age0)
+   by_word=add_prop_column(s, age0)
+  }
+
+  #iteration 
+  for (a in range_of_age[-1])
+  {
+    if (average==TRUE)
+    {by_word_by_age=average_sampling_CDI_reports(data, sample_size, a, nb_of_sample)}
+    else
+    {
+      ss=sampling_CDI_reports(data, sample_size, a)
+      by_word_by_age=add_prop_column(ss, age0)
+    }
+    by_word=rbind(by_word, by_word_by_age)
+  }
+ names(by_word)[names(by_word)=="Type"] <- "Type"
+ return(by_word)
+}
+```
+
+```{r, echo=FALSE, message=FALSE}
+#test
+#t<-sampling_CDI_reports(d_comprehension, 20, c(18))
+#t<-average_sampling_CDI_reports(d_comprehension, 70, c(18), 1)
+#t<-by_word_type(d_comprehension, 66, c(8:18), TRUE, 2)
+test=by_word_type(d_comprehension, 66, c(8:18), FALSE, 1)
+head(test)
+
+test%>%group_by(age)%>%tally()
+```
+
+
 
 ***Issue in the per-infant per-word database : infants have only one age ***
 ```{r, echo=FALSE, message=FALSE, }
@@ -228,7 +241,7 @@ d_comprehension$age[d_comprehension$data_id=="49249"]
 ***Renaming columns and adding lexical open_close as defined in wordbank***
 ```{r, echo=FALSE, results='hide', message=FALSE}
 #lexical classes
-lexClass <- read_delim(paste(path_to_CDI, "/CDI_lexical_classes.txt", sep=""), "\t", escape_double = FALSE, trim_ws = TRUE)
+lexClass <- read_delim("/Users/elinlarsen/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/CDI_lexical_classes.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
 
 #CDI
 cdi_words <- as.data.frame(lexClass$Type)
@@ -236,7 +249,7 @@ colnames(cdi_words)=c("Type")
 head(cdi_words)
 
 #Word length : mono versus polysyllabic words
-wordLength_cdi <- read_delim("~/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/Mono_poly_CDI.csv", "\t", escape_double = FALSE, trim_ws = TRUE)%>%
+wordLength_cdi <- read_delim("/Users/elinlarsen/Google Drive/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/Mono_poly_CDI.csv", "\t", escape_double = FALSE, trim_ws = TRUE)%>%
   rename(length=num_syllables)%>%
   select(Type, length)
 
@@ -245,7 +258,70 @@ wordLength_cdi$length<-gsub("poly", "P", wordLength_cdi$length)
 wordLength_cdi<-as.data.frame(wordLength_cdi)
 wordLength_cdi$length<- as.factor(wordLength_cdi$length) # super important to specify this variable as being factor
 ```
+```{r}
+head(lexClass)
+ggplot(lexClass, aes(x=lexical_classes))+
+  geom_bar()
 
+lexClass$lexical_classes[lexClass$Type=="yum yum"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="aunt"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="baa baa"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="baby"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="babysitter"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="bath"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="boy"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="breakfast"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="brother"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="bye"]="exclamation"
+prop_cdi$lexical_classes[prop_cdi$Type=="child"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="choo choo"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="cockadoodledoo"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="daddy"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="day"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="dinner"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="don't"]="verbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="girl"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="grandma"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="grandpa"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="grr"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="hello"]="exclamation"
+prop_cdi$lexical_classes[prop_cdi$Type=="hi"]="exclamation"
+prop_cdi$lexical_classes[prop_cdi$Type=="lady"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="later"]="adverbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="lunch"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="man"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="meow"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="mommy"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="moo"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="morning"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="night"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="nap"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="no"]="exclamation"
+prop_cdi$lexical_classes[prop_cdi$Type=="now"]="adverbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="ouch"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="peekaboo"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="people"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="please"]="exclamation"
+prop_cdi$lexical_classes[prop_cdi$Type=="person"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="quack quack"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="shh"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="sister"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="teacher"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="thank you"]="exclamation"
+prop_cdi$lexical_classes[prop_cdi$Type=="today"]="adverbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="tomorrow"]="adverbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="tonight"]="adverbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="uh oh"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="uncle"]="nouns"
+prop_cdi$lexical_classes[prop_cdi$Type=="vroom"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="wait"]="verbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="shh"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="wanna"]="verbs"
+prop_cdi$lexical_classes[prop_cdi$Type=="woof woof"]="onomatopoeia"
+prop_cdi$lexical_classes[prop_cdi$Type=="yes"]="exclamation"
+
+
+```
 ***Defining nex lexical categories***
 ```{r, echo=FALSE, , message=FALSE}
 #Proportion of infants reported to understand a word in CDI at different ages**
@@ -323,6 +399,7 @@ prop_cdi$lexical_classes[prop_cdi$Type=="woof woof"]="onomatopoeia"
 prop_cdi$lexical_classes[prop_cdi$Type=="yes"]="exclamation"
 
 
+
 #Renaming types from the lexical class "function words" : pronouns & adverbs & determiner & preposition
 prop_cdi$lexical_classes[prop_cdi$Type=="all"]="determiners"
 prop_cdi$lexical_classes[prop_cdi$Type=="another"]="determiners"
@@ -394,8 +471,15 @@ prop_cdi$open_close<-open_close_class$open_close
 lc<-prop_cdi%>%
   filter(age==8)%>%
   select(Type, lexical_classes) 
-
 ```
+
+```{r}
+
+ggplot(lc, aes(x=lexical_classes))+
+  geom_bar()
+```
+
+
 
 ***Saving the database with new lexical classes into csv***
 ```{r, echo=FALSE, message=FALSE}
@@ -702,6 +786,7 @@ Linear_model=function(data, AGES,ALGOS, UNIT)
         index=index+1
         d<-data%>%
           filter(algos %in% A,  age %in% a, unit %in% u)
+        print(head(d))
         model=lm(prop ~ log(Freq), data=d)
         df$unit[index]=u
         df$age[index]=a
@@ -719,14 +804,14 @@ Linear_model=function(data, AGES,ALGOS, UNIT)
 mean_R2_over_CDI_reports=function(data_CDI, data_algo, sample_size, range_of_age, nb_of_sample,algos, unit )
 {
   #initialisation
-  d=by_word_type(d_comprehension, sample_size, range_of_age, FALSE, 1)
+  d=by_word_type(d_comprehension, sample_size, range_of_age, TRUE, 2)
   all_dat=merge(data_algo, d, by='Type')
-  res=Linear_model(all_dat, range_of_age, algos, unit)
+  res=Linear_model(all_dat,range_of_age, algos, unit)
   mean_R2=as.data.frame(res$R2)
   
   for (n in seq(2,nb_of_sample,1))
   {
-    d=by_word_type(d_comprehension, sample_size, range_of_age, FALSE, 1)
+    d=by_word_type(d_comprehension, sample_size, range_of_age, TRUE, 2)
     all_dat=merge(data_algo, d, by='Type')
     R2=Linear_model(all_dat, range_of_age, algos, unit)
     mean_R2[paste("R2", n, sep="")]=R2$R2
@@ -739,11 +824,11 @@ mean_R2_over_CDI_reports=function(data_CDI, data_algo, sample_size, range_of_age
 
 *** Figure of R2 with  sample CDI reports ***
 ```{r, echo=FALSE, message=FALSE}
-#R2=mean_R2_over_CDI_reports(d_comprehension, data_algo, 70, c(8:18), 10, c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"))
-dat=merge(dd, data_algo, by="Type")
-R2=Linear_model(dat,c(8:18), c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"))
+R2=mean_R2_over_CDI_reports(d_comprehension, data_algo, 66, c(8:18), 10, c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"))
+#dat=merge(dd, data_algo, by="Type")
+#R2=Linear_model(dat,c(8:18), c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"))
 
-png("/Users/elinlarsen/Google Drive/PhD_elin/our_papers/CogSci2018/figures/R2_over_ages_bis.png",width=4500,height=2500, res=200 )
+png("/Users/elinlarsen/Google Drive/PhD_elin/our_papers/CogSci2018/figures/R2_over_ages_66sampled_10.png",width=4500,height=2500, res=200 )
 R2_gold<-R2%>%filter(algo=="gold")
 R2_algos<-R2%>%filter(algo %in% c('TPs', 'PUDDLE', 'DiBs', 'AGu'))
 R2_TPs<-R2%>%filter(algo %in% c('TPs'))
@@ -753,7 +838,7 @@ R2_AGu<-R2%>%filter(algo %in% c('AGu'))
 
 ggplot(data=R2, aes(x = age, y = R2, colour=algo, group=unit)) +
   geom_point()+
-  #geom_errorbar(aes(ymin=R2-sd, ymax=R2+sd), colour="black", width=.1) +
+  geom_errorbar(aes(ymin=R2-sd, ymax=R2+sd), colour="black", width=.1) +
   geom_line(data=R2_gold, aes(age, R2, colour=algo))+
   geom_line(data=R2_TPs, aes(age, R2, colour=algo, group=unit))+
   geom_line(data=R2_DiBS, aes(age, R2, colour=algo, group=unit))+
