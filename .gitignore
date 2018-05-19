@@ -4,17 +4,21 @@ wordsegcomp/Icon
 wordsegcomp/.DS_Store
 wordsegcomp/.ipynb_checkpoints
 
-
-.Ruserdata
-
-wordsegcomp/R_pipeline/website
-wordsegcomp/pipeline/__pycache__/
 *.ipynb
 *.cpython-36.pyc
 /Icon\r
 *.DS_Store
 *.Rhistory
+*.pyc
+*.DS_Store
+*/*.DS_Store
+*/*/*.DS_Store
+Icon
 
 __pycache__/
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
+/wordsegcomp/R_pipeline/.RData
+/wordsegcomp/R_pipeline/website
+/wordsegcomp/pipeline/__pycache__/
+/wordsegcomp/examples/english/Brent_Siskind/.RData
