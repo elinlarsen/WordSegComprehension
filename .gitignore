@@ -12,5 +12,5 @@ WordSegComprehension/wordsegcomp/pipeline/__pycache__/
 *.Rhistory
 
 __pycache__/
-IDS_CDS_ADS_cache/
-IDS_CDS_ADS_files/
+WordSegComprehension/wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
+WordSegComprehension/wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
