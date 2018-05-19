@@ -1,0 +1,502 @@
+---
+title: "WordSegAnalysis"
+author: "Elin Larsen"
+date: "08/05/2018"
+output: html_document 
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_chunk$set(fig.width=22, fig.height=40, echo=FALSE, warning=FALSE, message=FALSE) 
+
+source("util.R")
+```
+
+
+***Parameters to fill***
+```{r}
+path_to_CDI="/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/english/"
+
+path_res='~/GoogleDrive/PhD_elin/Projets/CDSwordSeg_Pipeline/results/res-brent-CDS/full_corpus/'
+path_ortho="~/GoogleDrive/PhD_elin/Projets/CDSwordSeg_Pipeline/recipes/childes/data/Brent/ortholines.txt"
+
+path_to_figures="/Users/elinlarsen/GoogleDrive/PhD_elin/our_papers/CogSci2018/figures/mai2018/"
+save=TRUE # whether or not to save figures in path_to_figures
+FORM="WG_comprehension"
+AGE=13
+UNIT="syllable"
+```
+
+***Load reshaped CDI database with CDI_Data.Rmd script***
+```{r, echo=FALSE, message=FALSE, results='asis'}
+ destfile= path_to_CDI_reshape=paste(path_to_CDI, "/Prop_all_forms_reshaped.csv", sep="")
+ scriptfile <- "/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/WordSegComprehension/wordsegcomp/CDI/reshape_CDI_Data.R"
+ if (!file.exists(destfile))
+   {
+    source(scriptfile)
+    print("running reshape_CDI_Data.R")
+ }
+d_prop =read_delim(destfile, "\t", escape_double = FALSE, trim_ws = TRUE)
+
+
+knitr::kable(head(d_prop), format = "html")%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+## Analysis of word segmentation algorithms output 
+
+This R Markdown document is aimed at analyzing word segmentation algorithms output relatively to reported infant word comprehension. 
+
+###PART 1: data processing
+
+**Number of occurrence of wordS correctly segmented by each algo**
+```{r, echo=FALSE, message=FALSE}
+algos=c('TPs','DiBs','PUDDLE','AGu', 'gold')
+
+freq_algos=read_algorithms_results(algos, path_res, "brent")
+
+knitr::kable(head(freq_algos), format = "html")%>%
+kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+**Final dataset containging all variables without CDI info**
+```{r,  echo=FALSE, message=FALSE}
+
+dat_all_forms=merge(d_prop, freq_algos, by="Type")
+dat_all_forms$corpus=rep("Brent", nrow(dat_all_forms))
+
+write.table(dat_all_forms, paste(path_res, "/res_algos_cdi_reshaped.csv", sep=""), na = "NA", append = FALSE, col.names = TRUE, sep="\t", row.names = FALSE)
+
+
+dat<-dat_all_forms%>%
+  filter(form==FORM)
+
+dat_age<- dat%>%
+  filter(age==AGE)
+
+dat_age_unit<-dat%>%
+  filter(age==AGE, unit==UNIT)
+
+dat_unit<-dat%>%
+  filter(unit==UNIT)
+
+knitr::kable(head(dat), format = "html")%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+------
+
+## PART 2 : Visualizing the data
+
+***select randomly X word types for different lexical classes and look at the evolution of understanding over age***
+```{r,echo=FALSE, results='hide',message=FALSE, fig.width=10,fig.height=9}
+#proportion_for_sampled_types(dat, c( "pronouns"), NA,FALSE, legend_name="type" )
+#proportion_for_sampled_types(dat, c("adverbs", "prepositions", "pronouns", "determiners", "wh-"), NA,FALSE )
+#proportion_for_sampled_types(dat, c("nouns", "adjectives", "verbs", "exclamation"), c(20, 20, 20, 7),TRUE)  
+
+```
+
+***select randomly X word types for different lexical open_close and look at the evolution of understanding over age***
+```{r,echo=FALSE, results='hide', message=FALSE, fig.width=10,fig.height=9}
+#proportion_for_sampled_types(dat, c("function", "content"), c(20,20), TRUE, "lex" )
+```
+
+
+***Box plots***
+
+```{r eruptions, echo=FALSE, cache=FALSE}
+inputPanel(
+  sliderInput("ages", label = "Ages (month)",
+              min = 8, max = 30, value = 13, step = 1)
+)
+
+renderPlot({
+  d<-dat_all_forms%>%
+    filter(age==input$ages, open_close  %in% c("function", "content"))
+
+  qplot(length, prop, facets = form ~ open_close, 
+      colour = open_close, geom = "boxplot", data = d)+
+  labs(title='Proportion of reported infant comprehension/production at 13 mo', y="Proportion ", x="Word length")+
+   theme_linedraw(base_size = 12)
+})
+```
+
+
+
+***Evolution with age of the effect of word length and lexical classes***
+```{r, echo=FALSE, cache=FALSE}
+inputPanel(
+  selectInput("forms", label = "Vocabulary forms",
+              choices = c("WG_comprehension", "WG_production", "WS_production"), selected = "WG_comprehension")
+)
+
+renderPlot({
+  d<-dat_all_forms%>%
+    filter(form==input$forms, open_close  %in% c("function", "content"))
+  
+  ggplot(data=d, aes(x=length, y=prop)) + 
+  geom_boxplot(aes(fill=age)) +
+  facet_grid(. ~ age)+
+  labs(title="", x="Length", y="Proportion of reported comprehension")
+
+})
+```
+
+```{r, cache=FALSE, echo=FALSE,message=FALSE}
+inputPanel(
+  selectInput("forms", label = "Vocabulary forms",
+              choices = c("WG_comprehension", "WG_production", "WS_production"), selected = "WG_comprehension"),
+  
+  selectInput("factors", label = "Linguistic factors",
+              choices = c("length", "open_close"), selected = "length")
+)
+
+renderPlot({
+  d<-dat_all_forms%>%
+    filter(form==input$forms, open_close  %in% c("function", "content"))
+  
+if (input$factors=="length")
+{
+  x=d$length
+}
+else{x=d$open_close}
+ ggplot(d, aes(x, y = prop, colour = input$factors)) +
+  geom_boxplot(aes(fill=input$factors)) +
+  facet_grid(. ~ age)+
+  labs(title="Proportion of reported comprehension/production across ages", x="Ages", y="Proportion ")+
+  theme_linedraw(base_size = 12)
+})
+```
+
+```{r,  echo=FALSE ,message=FALSE, cache=FALSE}
+inputPanel(
+  selectInput("forms", label = "Vocabulary forms",
+              choices = c("WG_comprehension", "WG_production", "WS_production"), selected = "WG_comprehension"),
+  
+  selectInput("lex", label = "Lexical class",
+              choices = c("adverbs", "prepositions", "pronouns", "determiners", "wh-", "nouns","adjectives", "verbs"),               selected = "nouns")
+)
+
+renderPlot({
+d=dat_all_forms%>%
+  filter(form==input$forms, lc==input$lex)
+
+ggplot(data=d, aes(x=lc, y=prop)) + 
+  geom_boxplot(aes(fill=lc)) +
+  facet_wrap( ~ age)+
+  labs(title="", x="Lexical category", y="Proportion of reported comprehension/production")
+})
+```
+
+-----
+
+## PART 3 : Linear regression
+
+### Linear models for each algorithm-pair unit for each age in the CDI
+
+***Figure of R2 with raw CDI reports***
+```{r , echo=FALSE, cache=FALSE}
+inputPanel(
+  selectInput("forms", label = "Vocabulary forms",
+              choices = c("WG_comprehension", "WG_production", "WS_production"), selected = "WG_comprehension"),
+  
+ inputPanel(
+  sliderInput("ages", label = "Ages (month)",
+              min = 8, max = 30, value = 13, step = 1)
+ )
+)
+
+renderPlot({
+  d<-dat_all_forms%>%
+    filter(form==input$forms, open_close  %in% c("function", "content"), age==input$ages)
+  
+  ## !!!! replace c(13) by c(input$ages)
+  R2=Linear_model(d, c(input$ages), c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"))
+  R2_gold<-R2%>%filter(algo=="gold")
+  R2_algos<-R2%>%filter(algo %in% c('TPs', 'PUDDLE', 'DiBs', 'AGu'))
+
+ggplot(R2_algos, aes(x = algo, y = R2, fill=algo)) +
+  geom_bar(position="dodge", stat="identity", show.legend=TRUE)+
+  geom_abline(data=R2_gold, aes(slope=0, intercept=R2))+
+  geom_text(data=R2_algos, aes(label=nbtokens), vjust=2, color="black", size=6)+
+  facet_grid( ~ unit)+
+  theme_light(base_size = 14)+
+  labs(title="", x="", y="Coefficient of determination R2")
+  
+})
+```
+
+
+```{r , echo=FALSE, cache=FALSE}
+inputPanel(
+  selectInput("forms", label = "Vocabulary forms",
+              choices = c("WG_comprehension", "WG_production", "WS_production"), selected = "WG_comprehension")
+  )
+
+
+renderPlot({
+  d<-dat_all_forms%>%
+    filter(form==input$forms, open_close  %in% c("function", "content"))
+  
+  if(input$forms %in% c("WG_comprehension", "WG_production"))
+  {AGES=c(8:18)}
+  else{AGES=c(16:30)}
+  
+  R2=Linear_model(d,AGES, c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"))
+
+#if (save==TRUE)
+#{png( paste(path_to_figures, "R2_over_ages.png", sep="") ,width=4500,height=3000, res=200 )}
+  R2_gold<-R2%>%filter(algo=="gold")
+  R2_algos<-R2%>%filter(algo %in% c('TPs', 'PUDDLE', 'DiBs', 'AGu'))
+  R2_TPs<-R2%>%filter(algo %in% c('TPs'))
+  R2_DiBS<-R2%>%filter(algo %in% c('DiBs'))
+  R2_PUDDLE<-R2%>%filter(algo %in% c('PUDDLE'))
+  R2_AGu<-R2%>%filter(algo %in% c('AGu'))
+  
+  ggplot(data=R2, aes(x = age, y = R2, colour=algo, group=unit)) +
+    geom_point()+
+    geom_line(data=R2_gold, aes(age, R2, colour=algo))+
+    geom_line(data=R2_TPs, aes(age, R2, colour=algo, group=unit))+
+    geom_line(data=R2_DiBS, aes(age, R2, colour=algo, group=unit))+
+    geom_line(data=R2_PUDDLE, aes(age, R2, colour=algo, group=unit))+
+    geom_line(data=R2_AGu, aes(age, R2, colour=algo, group=unit))+
+    facet_grid(. ~ unit)+
+    labs(title="", x="Ages (month)", y="Coefficient of determination R2")+
+    theme_linedraw(base_size = 16)+
+    theme(legend.position="top")+
+    scale_x_discrete(limit = c(8:18), labels = c("8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"))
+  
+})
+```
+
+
+
+
+***Function versus content words***
+```{r, cache=FALSE, echo=FALSE, message=FALSE, fig.width=10,fig.height=9}
+
+inputPanel(
+  selectInput("forms", label = "Vocabulary forms",
+              choices = c("WG_comprehension", "WG_production", "WS_production"), selected = "WG_comprehension"),
+  
+  sliderInput("ages", label = "Ages (month)",
+              min = 8, max = 30, value = 13, step = 1),
+  
+   selectInput("factors", label = "Linguistic factors",
+              choices = c("length", "open_close"), selected = "length")
+  
+  )
+
+renderPlot({
+  d<-dat_all_forms%>%
+    filter(form==input$forms, open_close  %in% c("function", "content"))
+  
+  if(input$forms %in% c("WG_comprehension", "WG_production"))
+  {AGES=c(8:18)}
+  else{AGES=c(16:30)}
+  
+  if(input$factors=="open_close")
+  {FACTORS=c("function", "content")}
+  else{FACTORS=c("M", "P")}
+
+
+    R2=Linear_model_by_group(dat, c(input$ages), c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"), group1= input$factors, var_group1 = FACTORS)
+    R2_gold<-R2%>%filter(algo=="gold")
+    R2_algos<-R2%>%filter(algo %in% c('TPs', 'PUDDLE', 'DiBs', 'AGu'))
+    
+    #if (save==TRUE)
+    #{png(paste(path_to_figures, "/R2_13mo_FunctionContent_nbtokens.png", sep=""),width=2500,height=2500, res=200 )}
+    
+    ggplot(R2_algos, aes(x = algo, y = R2, fill=algo)) +
+      geom_bar(position="dodge", stat="identity", show.legend=TRUE)+
+      geom_abline(data=R2_gold, aes(slope=0, intercept=R2))+
+      geom_text(data=R2_algos, aes(label=nbtokens), vjust=2, color="black", size=6)+
+      facet_grid(group1 ~ unit)+
+      theme_linedraw(base_size = 16)+
+      scale_y_continuous(limits = c(0, 0.35))+
+      theme(legend.position="top")+
+      labs(title="", x="", y="R2")
+
+})
+```
+
+
+***Mono verus polysyllabic words***
+```{r, cache=FALSE, echo=FALSE, message=FALSE, fig.width=10,fig.height=9}
+R2_length=Linear_model_by_group(dat, c(13), c('TPs', 'PUDDLE', 'AGu', 'gold', 'DiBs'),c("syllable", "phoneme"), group1= "length", var_group1 = c("M", "P") )
+R2_length_gold<-R2_length%>%filter(algo=="gold")
+R2_length_algos<-R2_length%>%filter(algo %in% c('TPs', 'PUDDLE', 'DiBs', 'AGu'))
+
+if (save==TRUE)
+{png(paste(path_to_figures, "/R2_13mo_MP_nbtokens.png", sep=""),width=2500,height=2500, res=200 )}
+
+ggplot(R2_length_algos, aes(x = algo, y = R2, fill=algo)) +
+  geom_bar(position="dodge", stat="identity",show.legend=TRUE)+
+  geom_abline(data=R2_length_gold, aes(slope=0, intercept=R2))+
+  geom_text(data=R2_length_algos, aes(label=nbtokens), vjust=-1, color="black", size=6)+
+  facet_grid(group1 ~ unit)+
+  theme_linedraw(base_size = 22)+
+  scale_y_continuous(limits = c(0, 0.35))+
+  theme(legend.position="top")+
+  labs(title="", x="", y="Coefficient of determination R2")
+dev.off()
+# Note : DiBS with syllable has no polysyllabic words : R2=0 by default
+```
+
+
+***Interaction length open/close class ***
+**** For TPs across ages ****
+```{r}
+R2=Linear_model_by_group(dat, c(8:18), c('TPs', 'PUDDLE', 'AGu', 'gold', 'DiBs'),c("syllable", "phoneme"), group1= "length", var_group1 = c("M", "P"),group2= "open_close", var_group2 = c("function", "content") )
+```
+
+
+```{r}
+#R2=mean_R2_over_CDI_reports(d_comprehension, data_algo, 66, c(8:18), 10, c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"))
+```
+
+```{r}
+R2_g<-R2%>%filter(algo=="gold" )
+R2_algos<-R2%>%filter(algo %in% c('TPs', 'PUDDLE', 'AGu', 'DiBs'))
+R2_TP<-R2%>%filter(algo %in% c('TPs', 'gold'), unit=="syllable")
+
+if (save==TRUE)
+{png(paste(path_to_figures, "/R2_TPs_MP_FC_phoneme_syllable_nbtokens.png", sep=""),width=2500,height=2500, res=200 )}
+
+ggplot(R2_TP, aes(x = age, y = R2, fill=algo)) +
+  geom_bar(position="dodge", stat="identity")+
+  #geom_abline(data=R2_g, aes(slope=0, intercept=R2))+
+  facet_grid(group1 ~ group2)+
+  #geom_text(data=R2_TP, aes(label=nbtokens), vjust=0, color="black", size=6, position = position_dodge(0.9))+
+  theme_linedraw(base_size = 22)+
+  scale_y_continuous(limits = c(0, 0.38))+
+  theme(legend.position="top")+
+  labs(title="", x="Age (month)", y="Coefficient of determination R2")+
+  scale_x_discrete(limit = c(8:18), labels = c("8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"))
+dev.off()
+```
+
+
+***For all algo at one age ***
+```{r}
+R2=Linear_model_by_group(dat, c(13), c('TPs', 'PUDDLE', 'AGu', 'gold', 'DiBs'),c("syllable", "phoneme"), group1= "length", var_group1 = c("M", "P"),group2= "open_close", var_group2 = c("function", "content") )
+R2_g<-R2%>%filter(algo=="gold" )
+R2_algos<-R2%>%filter(algo %in% c('TPs', 'PUDDLE', 'AGu', 'DiBs'))
+R2_TP<-R2%>%filter(algo %in% c('TPs', 'gold'), unit=="syllable")
+
+if (save==TRUE)
+{png(paste(path_to_figures, "/R2_13mo_MP_FC_phoneme_syllable_nbtokens.png", sep=""),width=2500,height=2500, res=200 )}
+
+ggplot(R2_algos, aes(x = algo, y = R2, fill=unit)) +
+  geom_bar(position="dodge", stat="identity")+
+  geom_abline(data=R2_g, aes(slope=0, intercept=R2))+
+  facet_grid(group1 ~ group2)+
+  geom_text(data=R2_algos, aes(label=nbtokens), vjust=0, color="black", size=6, position = position_dodge(0.9))+
+  theme_linedraw(base_size = 24)+
+  scale_y_continuous(limits = c(0, 0.6))+
+  theme(legend.position="top")+
+  labs(title="", x="", y="Coefficient of determination R2")
+dev.off()
+```
+
+***Lexical classes***
+```{r, echo=FALSE, message=FALSE, fig.width=10,fig.height=9}
+R2_lexclasses=Linear_model_by_group(dat, c(13), c('TPs', 'PUDDLE', 'DiBs', 'AGu', 'gold'),c("syllable", "phoneme"), group1= "lc", var_group1 = c("nouns", "adjectives", "verbs","exclamation", "adverbs", "prepositions", "pronouns", "determiners", "wh-"))
+
+ggplot(R2_lexclasses, aes(x = algo, y = R2, fill=algo)) +
+  geom_bar(position="dodge", stat="identity")+
+  facet_grid(group1 ~ unit)
+```
+
+------
+
+## Linear mixed effect model
+
+***Assumptions***
+```{r}
+  
+d_gold=dat_age_unit%>%filter(algos=="gold")
+hist(d_gold$prop)
+
+qqnorm(d_gold$prop, main="QQplot")  
+qqline(d_gold$prop)  
+
+#skeweness of the distribution
+skewness(d_gold$prop)
+
+# number of words per algo-syllable : 
+#design is not balanced (i.e. some groups have more samples) => normal ANOVA cannot be used, 
+tapply(dat_age_unit$prop, INDEX=dat_age_unit$algos, FUN=length)
+
+
+```
+
+
+***Anova with algorithm as a factor***
+```{r}
+
+m0=lm(prop~ scale(log(Freq)), data=dat_age_unit%>%filter(algos=='TPs')) 
+m1=lmer(prop~  (1+log(Freq)*open_close|algos), data=dat_age_unit) # one-way anova
+
+#TukeyHSD(m0, conf.level=0.95, which=c("open_close"))
+
+summary(m1)
+#testInteractions(m1)
+
+```
+
+***Fixed effect of frequency, algo and unit at 13mo***
+```{r}
+fit_fixed=lm(prop ~ log(Freq) + algos, dat_age_unit, REML = TRUE)
+fit_0=lm(prop ~ log(Freq) ,dat_age_unit, REML = TRUE)
+summary(fit_fixed)
+summary(fit_0)
+summary(anova(fit_0, fit_fixed))
+```
+
+***Model 0 : fixed effect of Frequency and random effect of algo-syllable at 13 mo***
+```{r}
+fit_random_inter=lmer(prop ~ log(Freq) + (1|algos), dat_age_unit, REML = TRUE)
+fit_random_slope=lmer(prop ~ log(Freq)  +(1+ log(Freq)|algos) ,dat_age_unit, REML = TRUE)
+summary(fit_random_inter)
+summary(fit_random_slope)
+anova(fit_random_inter, fit_random_slope)
+summary(anova(fit_random_inter, fit_random_slope))
+```
+
+***Model 1 : fixed effect of Frequency and random effect of algo and ages***
+```{r}
+fit_random_inter=lmer(prop ~ log(Freq) + (1|algos) + (1|age), dat_unit, REML = TRUE)
+fit_random_slope=lmer(prop ~ log(Freq)  +(1+ log(Freq)|algos)+(1+ log(Freq)|age),dat_unit, REML = TRUE)
+summary(fit_random_inter)
+summary(fit_random_slope)
+anova(fit_random_inter, fit_random_slope)
+summary(anova(fit_random_inter, fit_random_slope))
+```
+
+
+**Comparing models with anova**
+```{r}
+
+fit_length <- lmer(prop ~ log(Freq)+ +(1+log(Freq)|algos) + length , data=dat_age_unit, REML = TRUE)
+
+fit_open_close<- lmer(prop ~ log(Freq) +(1+log(Freq)|algos) + open_close , data=dat_age_unit, REML = TRUE)
+
+fit0=lmer(prop ~ log(Freq) +(1+log(Freq)|algos), dat_age_unit, REML = TRUE)
+
+fit_total <- lmer(prop ~ log(Freq) +(1+log(Freq)|algos) + length* open_close, dat_age_unit, REML = TRUE)
+
+summary(fit_length)
+summary(fit_open_close)
+summary(fit0)
+summary(fit_total)
+anova(fit0,  fit_total)
+```
+**Comparing models with Bayes factor**
+```{r}
+dat_age_unit$logFreq=log(dat_age_unit$Freq)
+#bf = lmBF(formula = prop ~ logFreq + length* open_close, data = dat_age_unit%>%filter(algos=='TPs'), whichRandom = "ID", posterior = TRUE,iterations = 1000)
+bf = lmBF(formula = prop ~ logFreq + length* open_close, data = dat_age_unit%>%filter(algos=='TPs'), whichRandom = "ID")
+```

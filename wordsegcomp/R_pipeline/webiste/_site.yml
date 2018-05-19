@@ -1,0 +1,27 @@
+name: Word Segmentation Prediction
+output_dir: 'R_pipeline'
+navbar:
+  title: WordSeg
+  left:
+  - text: Home
+    href: index.html
+  - text: WordSegAnalysis
+    href: WordSegAnalysis.html
+  - text: CDI Data
+    href: VisualizeCDIdata.html
+  - text: Lexical classes
+    href: RedefineLexClass.html
+  - text: Open close classes
+    href: OpenCloseClass.html
+  - text: Concreteness
+    href: Concreteness.html
+output:
+  html_document:
+    theme: cosmo
+    highlight: textmate
+    include:
+      after_body: footer.html
+    css: styles.css
+    lib_dir: site_libs
+    self_contained: no
+

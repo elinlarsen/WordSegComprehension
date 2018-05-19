@@ -1,0 +1,125 @@
+---
+title: "CDI data"
+author: "Elin Larsen"
+date: "08/05/2018"
+#output: html_document 
+output: html_notebook 
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+source("util.R")
+```
+
+***Parameters to fill NOW***
+```{r}
+#CDI and linguistic factors
+path_to_CDI="/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/english/"
+path_to_CDI_reshape=paste(path_to_CDI, "/Prop_all_forms_reshaped.csv", sep="")
+
+path_to_figures="/Users/elinlarsen/GoogleDrive/PhD_elin/our_papers/CogSci2018/figures/mai2018/"
+scriptfile <- "/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/WordSegComprehension/wordsegcomp/CDI/reshape_CDI_Data.R"
+
+save=FALSE
+FORM="WG_comprehension"
+AGE=13
+```
+
+## Data processing
+
+```{r,  echo=FALSE, message=FALSE, results='hide',}
+# CDI reshaped data
+destfile= path_to_CDI_reshape=paste(path_to_CDI, "/Prop_all_forms_reshaped.csv", sep="")
+
+if (!file.exists(destfile)) {
+    source(scriptfile)
+    print("running reshape_CDI_Data.R")
+}else {
+print("file exists")}
+ 
+df_linguistic_CDI =read_delim(destfile, "\t", escape_double = FALSE, trim_ws = TRUE)
+knitr::kable(head(df_linguistic_CDI), format = "html")%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+***Linguistic factors : lexical class, word length, open/close class***
+```{r, echo=FALSE, message=FALSE}
+destfile= path_to_CDI_reshape=paste(path_to_CDI, "/cdi_linguistic_factors.csv", sep="")
+
+if (!file.exists(destfile)) {
+    source(scriptfile)
+    print("running reshape_CDI_Data.R")
+}else {
+print("file exists")}
+ 
+df_linguistic =read_delim(destfile, "\t", escape_double = FALSE, trim_ws = TRUE)
+knitr::kable(head(df_linguistic), format = "html")%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df_linguistic, aes(x=lc)) + 
+  geom_bar(fill="steelblue") +
+  labs(title="Histogram for lexical classes ", x="Lexical classes", y="Number of words")
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df_linguistic, aes(x=open_close)) + 
+  geom_bar(fill="steelblue") +
+  labs(title="Histogram of content and function word ",  y="Number of words")
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df_linguistic, aes(x=lc, fill=length)) + 
+  geom_bar(position=position_dodge()) +
+  labs(title="Histogram for lexical classes in Word&Gestures CDI ", x="Lexical classes", y="Number of words")
+```
+
+
+```{r,  echo=FALSE}
+ggplot(data=df_linguistic, aes(x=open_close, fill=length)) + 
+  geom_bar(position=position_dodge()) +
+  labs(title="Histogram for lexical classes in Word&Gestures CDI ", x="Lexical classes", y="Number of words")
+```
+
+
+-----
+
+***Proportion of reported infant comprehension at 13 mo***
+```{r}
+CDI_age_form=df_linguistic_CDI%>%filter(age==AGE, form==FORM)
+CDI_form=df_linguistic_CDI%>%filter( form==FORM)
+CDI_age=df_linguistic_CDI%>%filter(age==AGE)
+
+```
+
+
+```{r eruptions, echo=FALSE, cache=FALSE}
+inputPanel(
+  selectInput("forms", label = "Vocabulary forms",
+              choices = c("WG_comprehension", "WG_production", "WS_production"), selected = "WG_comprehension"),
+  
+  selectInput("factors", label = "Linguistic factors",
+              choices = c("length", "open_close"), selected = "length")
+  
+  #sliderInput("bw_adjust", label = "Bandwidth adjustment:",
+              #min = 0.2, max = 2, value = 1, step = 0.2)
+)
+
+renderPlot({
+  
+  d<-df_linguistic_CDI%>%filter(open_close %in% c('function', 'content'), form==input$forms)
+  
+  ggplot(d, aes(eval(parse(text="input$factors")), prop, fill=eval(parse(text="input$factors"))))+
+  geom_boxplot() + 
+  facet_wrap(~ age) +
+  labs(x="",
+       y="Mean proportion over understood word types",
+       title="Age evolution of the proportion of infants reported to understand/produce words")
+})
+```
+

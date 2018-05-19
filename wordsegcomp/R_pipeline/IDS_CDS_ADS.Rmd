@@ -1,0 +1,489 @@
+---
+title: "IDS_CDS_ADS"
+author: "Elin Larsen"
+date: "10/05/2018"
+output: html_document
+#runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE)
+source("util.R")
+```
+
+##Paths to modify
+```{r paths}
+path_to_CDI="/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/english/"
+res='/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordSeg_Pipeline/results/'
+path_to_figures="/Users/elinlarsen/GoogleDrive/PhD_elin/our_papers/CogSci2018/figures/mai2018/"
+
+#depends on the data architecture 
+res_brent=paste(res, 'Brent/full_corpus', sep='/')
+res_providence=paste(res, 'Providence/full_corpus', sep='/')
+res_buckeye=paste(res, 'buckeye', sep='/')
+```
+
+
+##For quick reproduction : skip this and go to the chunk load cdi-algo-data
+else clean environment, modify paths and clean each script
+### ALGOS parameters
+```{r}
+algos=c('tp/relativeforward', 'tp/absoluteforward', 'tp/relativebackward', 'tp/absolutebackward','dibs','puddle','ag')
+unit=c("phoneme", "syllable")
+Asyll=paste(algos,"syllable", sep="/")
+Aph=paste(algos,"phoneme", sep="/")
+AU=c(Asyll, Aph)
+AU_g=list.append(AU,"gold")
+```
+
+### Data processing
+```{r algos}
+brent=read_gold(res_brent, "brent")
+providence=read_gold(res_providence, "providence")
+buckeye=read_gold(res_buckeye, "buckeye")
+
+freq_algos_brent=read_algorithms_results(res_brent, algos, res_brent, 'brent')
+freq_algos_providence=read_algorithms_results(res_providence , algos, res_providence, 'providence')
+freq_algos_buckeye=read_algorithms_results(res_buckeye,  algos, res_buckeye, 'buckeye')
+```
+
+```{r table_algo}
+freq_all=dplyr::bind_rows(brent, freq_algos_brent, providence, freq_algos_providence , buckeye, freq_algos_buckeye)%>%
+  mutate(uni_lemma=Type)%>%
+  select(-Type)
+
+#knitr::kable(head(freq_all), format = "html")%>%
+#kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+***Check number of words per algos***
+```{r nb_types_per_algos}
+for (a in AU_g)
+{ 
+  X<-freq_all%>%
+  filter(au==a, corpus=="brent")%>%
+  group_by(uni_lemma, algos)%>%
+  n_groups()
+  print(paste(a, X, sep= ": "))
+  }
+
+```
+
+
+###Stemming : -> FOR LATER ANALYSIS
+Not working for now
+```{r stemming}
+#freq_all$lemma=stem(freq_all$Type, "english") 
+```
+
+```{r cdi, echo=FALSE, message=FALSE, results='asis'}
+#OLD / Load reshaped CDI database with CDI_Data.Rmd script
+# destfile= path_to_CDI_reshape=paste(path_to_CDI, "/Prop_all_forms_reshaped.csv", sep="")
+ #scriptfile <- "/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/WordSegComprehension/wordsegcomp/CDI/reshape_CDI_Data.R"
+ #if (!file.exists(destfile))
+   #{
+    #source(scriptfile)
+    #print("running reshape_CDI_Data.R")
+ #}
+#d_prop =read_delim(destfile, "\t", escape_double = FALSE, trim_ws = TRUE)
+```
+
+###last version of CDI from Braginsky 2018
+```{r uni_prop_cdi}
+load(paste('/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/', 'uni_prop_data.RData', sep="/"),  .GlobalEnv)
+
+new_prop<-uni_prop_data%>%
+  filter(language=="English (American)")
+
+#linguistics<-d_prop%>%
+  #mutate(uni_lemma=Type, measure=form)%>%
+  #select(-prop)
+  
+#linguistics$measure[linguistics$measure=="WG_production"]="produces"
+#linguistics$measure[linguistics$measure=="WS_production"]="produces"
+#linguistics$measure[linguistics$measure=="WG_comprehension"]="understands"
+
+#new_prop=merge(new_prop_eng, linguistics, by=c("uni_lemma", "age", "measure"))
+head(new_prop)
+```
+
+Number of uni_lemma types 
+```{r}
+new_prop%>%
+group_by(uni_lemma)%>%
+  n_groups()
+```
+
+### Merge cdi data and algo data by TYPE
+```{r data}
+
+new=merge(new_prop,freq_all)%>%
+  select(-items, -num_true, -num_false)
+new$log_freq=log(new$freq_smoothed)
+new$log_count=log(new$count+1)
+
+knitr::kable(head(new), format = "html")%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+
+Save this temporary data : 
+```{r save_cdi_algo_data}
+#save(new, file = paste(res, "/braginsky_cdi_algo_combined.RData",sep=""))
+```
+
+
+###Load data frame containing word segmentation algorithm results and CDI data CLEAN
+```{r load_cdi_algo_data}
+#load(new, file = paste(res, "/braginsky_cdi_algo_combined.RData",sep=""))
+```
+
+***Check number of CDI words per algos***
+```{r nb_types}
+for (a in AU_g)
+{ 
+  X<-new%>%
+  filter(au==a)%>%
+  group_by(uni_lemma, algos)%>%
+  n_groups()
+  print(paste(a, X, sep= ": "))
+  }
+```
+
+##Model parameters
+```{r}
+AGES_comp=seq(8,18)
+AGES_prod=seq(8,30)
+CORPUS=c("brent", "providence", "buckeye")
+MEASURE=c( 'understands')
+if(MEASURE=="produces"){AGES=AGES_prod} else(AGES=AGES_comp)
+AU_g=list.append(AU,"gold")
+G=c("gold")
+DATA=new
+```
+
+##Linear models
+
+### by corpus-measure-algo-unit-age
+```{r model_by_corpus WG}
+R2_by_parameters=function(DATA, AGES, AG_g, CORPUS, MEASURE)
+{
+df=setNames(data.frame(matrix(ncol = 8, nrow = length(AGES)*length(AU_g)*length(CORPUS)*length(MEASURE))), c("age", "corpus", "measure", "au", "algo", "unit", "R2", "nbtokens"))
+  index=0
+  for (c in CORPUS)
+  {
+    for (f in MEASURE)
+    {
+      for (a in AGES)
+      {
+        for (A in AU_g)
+        {
+          index=index+1
+          #print(paste(a, A, f, c, sep=" "))
+          d<-DATA%>%
+            filter(au %in% A,  age %in% a, corpus %in% c, measure%in% f)
+          nb_tokens=d%>%
+            group_by(uni_lemma)%>%
+            n_groups()
+          model=lm(prop ~  log(freq_smoothed), data=d)
+          df$corpus[index]=c
+          df$measure[index]=f
+          df$age[index]=a
+          df$au[index]=A
+          
+          if(A!="gold"){
+            aa=head(strsplit(A[1], "/")[[1]], -1)
+            if (length(aa)==2){df$algo[index]=paste(aa[1], aa[2], sep="/")}
+            else(df$algo[index]=aa)
+            df$unit[index]=last(strsplit(A[1], "/")[[1]])}
+          if(A=="gold"){
+            df$algo[index]=A
+            df$unit[index]=" "
+          }
+          df$R2[index]=summary(model)$r.squared
+          df$nbtokens[index]=nb_tokens
+        }
+      }
+    }
+  }
+  return(R2_results=as_tibble(df))
+}
+```
+
+```{r R2}
+R2_comp=R2_by_parameters(DATA, seq(8,18), AG_g, CORPUS, "understands")
+R2_prod=R2_by_parameters(DATA, seq(8,30), AG_g, CORPUS, "produces")
+```
+
+
+Saving results
+```{r saving_results}
+#write.table(R2_comp, paste(res, "/R2_eng_all_corpus_comprehension_BraginskyCDIData.csv", sep=""), na = "NA", append = FALSE, col.names = TRUE, sep="\t", row.names = FALSE)
+
+#write.table(R2_prod, paste(res, "/R2_eng_all_corpus_production_BraginskyCDIData.csv", sep=""), na = "NA", append = FALSE, col.names = TRUE, sep="\t", row.names = FALSE)
+
+```
+
+Visualising results
+```{r vis, fig.width=20, fig.height=12}
+ggplot(R2_comp%>%filter(au%in% c("gold","tp/relativeforward/syllable",
+                                          "tp/relativebackward/syllable","ag/syllable")), aes(as.factor(age), R2, colour=au, shape=corpus))+
+  geom_point(size=4, alpha=0.9) +
+  facet_grid(. ~ corpus)+
+  theme_bw(base_size=22) 
+
+ggplot(R2_prod%>%filter(au%in% c("gold","tp/relativeforward/syllable", "tp/relativebackward/syllable", "ag/syllable"))
+       , aes(as.factor(age), R2, colour=au, shape=corpus))+
+  geom_point(size=4, alpha=0.9) +
+  facet_grid( ~ corpus)+
+  theme_bw(base_size=22) 
+
+```
+
+
+###LM
+Let's check results from IS paper : corpus==brent, measure==understands, age==13
+
+```{r lmer_IS}
+AGE=13
+MEASURE="understands"
+CORPUS="brent"
+sub<-DATA%>%filter(age==AGE, measure==MEASURE, corpus==CORPUS)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m0 <- lm(prop ~ log(count+1)+ log(count+1):au, sub)
+summary(m0)
+plot_model(m0, type="std",  sort.est = TRUE, show.values = TRUE, value.offset = .3, axis.lim = c(-0.5, 0.5))
+```
+
+
+Let's for each algorithm compare it predictive power to the gold
+```{r pairwise_algo, echo=FALSE}
+for (a in AU)
+{ 
+  included=c(a, "gold")
+  fit1=lm(prop~log(count+1) + log(count+1):au ,data=sub,subset=c(au %in% included))
+  #print(summary(fit1))
+}
+```
+
+
+Only TPs RF with syllable
+```{r}
+pair=c("tp/relativeforward/syllable", "gold", "ag/syllable")
+m1=lm(prop~log(count+1) + log(count+1):au ,data=sub,subset=c(au %in% pair))
+summary(m1)
+plot_model(m1, type="std", sort.est = TRUE, show.values = TRUE, value.offset = .3, axis.lim=c(0,0.5))
+```
+
+
+Look at the evoluation of age for all algorithms : only TP RF syllable has 1. an effect > 0.1, that is 2. significant
+```{r lmer_age}
+sub<-DATA%>%filter(measure==MEASURE, corpus==CORPUS)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m2 <- lm(prop ~ log(count+1)*age+ log(count+1):au:age, sub)
+summary(m2)
+plot_model(m2, type="std", sort.est = TRUE, show.values = TRUE, axis.lim=as.vector(c(0,0.5)))
+
+#plotting interaction between age and algorithm-unit pair
+#plot_model(m2, type = "int", terms = c("age", "au")) # not working !!!
+```
+
+
+Restriction to TP-RF syllable and gold
+```{r lmer-age}
+included=c("tp/relativeforward/syllable", "gold", "ag/syllable")
+sub<-DATA%>%filter(measure==MEASURE, corpus==CORPUS, au %in% included)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m2_tp <- lm(prop ~ age+ log(count+1):age+ log(count+1):au:age, sub)
+#m2_tp <- lm(prop ~ age + log():age+ log(freq_smoothed):au:age, sub) 
+summary(m2_tp)
+plot_model(m2_tp, type="std", sort.est = TRUE, show.values = TRUE, axis.lim=as.vector(c(0,1)))
+```
+
+Weird fact :  the p-value with count is clearly not the same than with freq_smoothed!
+
+```{r interaction_algo}
+
+m=lm(prop~ log_freq*as.factor(age)*au, sub)
+ plot_model(m, type="pred", terms=c("log_freq", "au", "age"))
+```
+
+
+##Let's for each algorithm compare it predictive power to the gold with age evolution
+```{r pairwise}
+for (a in AU)
+{ 
+  included=c(a, "gold")
+  #fit2=lm(prop~ age+ log(count+1):age + log(count+1):au:age ,data=sub,subset=c(au %in% included))
+  #print(summary(fit2))
+}
+```
+
+***Now corpus="brent", measure="produces", algos='TP-RF-syll'***
+```{r}
+MEASURE="produces"
+CORPUS="brent"
+included=c("tp/relativeforward/syllable", "gold")
+sub<-DATA%>%filter(measure==MEASURE, corpus==CORPUS, au %in% included)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m_b_prod <- lm(prop ~ age + log(count+1):age+ log(count+1):au:age, sub)
+summary(m_b_prod)
+plot_model(m_b_prod, type="std",  sort.est = TRUE, show.values = TRUE, value.offset = .3)
+```
+
+***Now corpus="providence", measure="understands", algos='TP-RF-syll'***
+```{r}
+MEASURE="understands"
+CORPUS="providence"
+included=c("tp/relativeforward/syllable", "gold")
+sub<-DATA%>%filter(measure==MEASURE, corpus==CORPUS, au %in% included)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m_b_prod <- lm(prop ~ age + log(count+1):age+ log(count+1):au:age, sub)
+summary(m_b_prod)
+plot_model(m_b_prod, type="std",  sort.est = TRUE, show.values = TRUE, value.offset = .3)
+```
+
+
+***Now corpus="providence", measure="produces", algos='TP-RF-syll'***
+```{r}
+MEASURE="produces"
+CORPUS="providence"
+included=c("tp/relativeforward/syllable", "gold")
+sub<-DATA%>%filter(measure==MEASURE, corpus==CORPUS, au %in% included)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m_b_prod <- lm(prop ~ age + log(count+1):age+ log(count+1):au:age, sub)
+summary(m_b_prod)
+plot_model(m_b_prod, type="std",  sort.est = TRUE, show.values = TRUE, value.offset = .3)
+```
+
+
+***Now corpus="buckeye", measure="understands", algos='TP-RF-syll'***
+```{r}
+MEASURE="understands"
+CORPUS="buckeye"
+included=c("tp/relativeforward/syllable", "gold")
+sub<-DATA%>%filter(measure==MEASURE, corpus==CORPUS, au %in% included)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m_b_prod <- lm(prop ~ age + log(count+1):age+ log(count+1):au:age, sub)
+summary(m_b_prod)
+plot_model(m_b_prod, type="std",  sort.est = TRUE, show.values = TRUE, value.offset = .3)
+```
+
+
+***Now corpus="buckeye", measure="produces", algos='TP-RF-syll'***
+```{r}
+MEASURE="produces"
+CORPUS="buckeye"
+included=c("tp/relativeforward/syllable", "gold")
+sub<-DATA%>%filter(measure==MEASURE, corpus==CORPUS, au %in% included)
+sub$au=factor(sub$au)
+sub$au=relevel(sub$au,"gold")
+
+m_b_prod <- lm(prop ~ age + log(count+1):age+ log(count+1):au:age, sub)
+summary(m_b_prod)
+plot_model(m_b_prod, type="std",  sort.est = TRUE, show.values = TRUE, value.offset = .3)
+```
+
+
+##Linear mixed effect model 
+**One big model : corpus and measure included and interacting with algorithm-unit and log frequency**
+
+***Let's fix age***
+```{r lmer_big}
+AGE=13
+included=c("gold", "tp/relativeforward/syllable")
+x<-DATA%>%filter(age==AGE, au %in% included)
+x$au=as.factor(x$au)
+x$corpus=as.factor(x$corpus)
+x$measure=as.factor(x$measure)
+x$au=relevel(x$au,"gold")
+x$corpus=relevel(x$corpus,"buckeye")
+x$measure=relevel(x$measure, "understands")
+
+m3 <- lmer(prop ~ log(freq_smoothed)+ log(freq_smoothed):au:corpus:measure +(1 + log(freq_smoothed)|uni_lemma),  x)
+#m3 <- lmer(prop ~ log(count+1)+ log(count+1):au:corpus:measure +(1 + log(count+1)|uni_lemma),  x)
+summary(m3)
+#plot_model(m3, type = "std", sort.est = TRUE, show.values = TRUE) # not working !!!!
+```
+
+
+Interaction between corpus and measure and algorithm by 18 month
+```{r interaction-AU-corpus-prod}
+MEASURE="produces"
+AGE=25
+if(MEASURE=="understands"){task="comprehension"}else{task="production"}
+included=c("gold", "tp/relativeforward/syllable", "ag/syllable")
+x<-DATA%>%filter(age==AGE, au %in% included, measure==MEASURE)
+x$au=as.factor(x$au)
+x$corpus=as.factor(x$corpus)
+x$au=relevel(x$au,"gold")
+x$corpus=relevel(x$corpus,"buckeye")
+
+#m <- lmer(prop ~ log_freq*as.factor(au)*as.factor(corpus) + (log(freq_smoothed)|uni_lemma) , x)
+m <- lm(prop ~ log_count*au*corpus, x)
+
+plot_model(m, type="pred", terms=c("log_count", "au", "corpus"), title=paste("Predicted values for proportion of", AGE, "mo infants", task, sep=" "))
+
+```
+```{r interaction-AU-corpus-comp }
+MEASURE="understands"
+AGE=16
+if(MEASURE=="understands"){task="comprehension"}else{task="production"}
+included=c("gold", "tp/relativeforward/syllable",  "ag/syllable")
+x<-DATA%>%filter(age==AGE, au %in% included, measure==MEASURE)
+x$au=as.factor(x$au)
+x$corpus=as.factor(x$corpus)
+x$au=relevel(x$au,"gold")
+x$corpus=relevel(x$corpus,"buckeye")
+
+#m <- lmer(prop ~ log_freq*as.factor(au)*as.factor(corpus) + (log(freq_smoothed)|uni_lemma) , x)
+m <- lm(prop ~ log_count*au*corpus, x)
+
+plot_model(m, type="pred", terms=c("log_count", "au", "corpus"), title=paste("Predicted values for proportion of", AGE, "mo infants", task, sep=" "))
+
+```
+
+
+Interesting right ? It seems (though I would love to properly test statistically and have the statistical power to do so) that TP-RF syllable prediction are clearly separated for comprehension for the Brent and Providnece corpus but not at all for the buckeye corpus. 
+For production at 18 mo prediction differences are not so clear : so let's look at the evolution of these predictions across ages. 
+
+
+***With age as a main effect, which slopes depends ***
+The thing is : the comprehension measure is only available from 8 to 18 mo, while the production one is available from 8 to 30 mo.
+```{r lmer_full_model}
+
+included=c("gold", "tp/relativeforward/syllable")
+x<-DATA%>%filter(au %in% included)
+x$au=as.factor(x$au)
+x$corpus=as.factor(x$corpus)
+x$measure=as.factor(x$measure)
+
+x$au=relevel(x$au,"gold")
+x$corpus=relevel(x$corpus,"buckeye")
+x$measure=relevel(x$measure, "understands")
+m4 <- lmer(prop ~ age*log(freq_smoothed)+ log(freq_smoothed):au:corpus:measure +(1+age+ log(freq_smoothed)|uni_lemma),  x)
+summary(m4)
+```
+
+
+**Checking model assumptions : Arghh;...**
+```{r assumptions}
+plot_model(m0, type="diag")
+plot_model(m1, type="diag")
+plot_model(m2, type="diag")
+plot_model(m3, type="diag")
+```

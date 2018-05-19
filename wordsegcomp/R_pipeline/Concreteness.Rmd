@@ -1,0 +1,50 @@
+---
+title: "Concreteness"
+author: "Elin Larsen"
+date: "27/02/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = TRUE)
+library(tidyverse) 
+```
+
+**Paths**
+```{r}
+path_to_CDI_lexClass="/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordSeg_Pipeline//CDI/english/New_lexclass.csv"
+path_to_conc="/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/english/concreteness_2_classes.csv"
+
+```
+**Concreteness in 40 K english words and in CDI**
+```{r, echo=FALSE, message=FALSE}
+conc <- read_delim(path_to_conc, "\t", escape_double = FALSE, trim_ws = TRUE)%>%
+  select(Type,Conc.M)%>%
+  mutate(Conc.cat=round(Conc.M, digits=0))
+
+lc <- read_delim(path_to_CDI_lexClass, "\t", escape_double = FALSE, trim_ws = TRUE)%>%
+  rename(lc=lexical_classes)
+cdi_words <- as.data.frame(lc$Type)
+colnames(cdi_words)=c("Type")
+
+hist(conc$Conc.cat, main ="Histogram of concretenesss in 40 K english words")
+
+conc_cdi<- merge(conc, cdi_words, by="Type")
+
+knitr::kable(head(conc_cdi), format = "html")
+hist(conc_cdi$Conc.cat, main ="Histogram of concretenesss in CDI words")
+```
+
+**Redefine concreteness into two categories**
+```{r, echo=FALSE, message=FALSE}
+conc_cdi$Conc.cat<-gsub("1",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("2",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("3",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("4",0, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<-gsub("5",1, conc_cdi$Conc.cat)
+conc_cdi$Conc.cat<- as.factor(conc_cdi$Conc.cat)
+
+ggplot(data=conc_cdi, aes(x=Conc.cat)) + 
+  geom_bar(fill="steelblue") +
+  labs(title="Histogram of binary concretenesss in CDI words ", x="Concreteness categories", y="Number of words")
+```
