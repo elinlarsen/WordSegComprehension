@@ -1,8 +1,0 @@
----
-title: "index.Rmd"
-author: "Elin Larsen"
-date: "08/05/2018"
-output: html_document
----
-
-Hello, Website!

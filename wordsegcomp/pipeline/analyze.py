@@ -41,7 +41,7 @@ def freq_token_in_corpus(path_file):
     df=pd.DataFrame.from_dict(c, orient='index')
     df.reset_index(level=0, inplace=True)
     df.columns=['Type', 'Freqgold']
-    df.sort('Freqgold', ascending=False, inplace=True)
+    df.sort_values('Freqgold', ascending=False, inplace=True)
     df.reset_index(drop=True, inplace=True)
     return(df)
 

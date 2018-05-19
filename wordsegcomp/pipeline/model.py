@@ -35,15 +35,15 @@ def linear_algo_CDI(path_ortho,path_res, sub, algos, unit,ages, CDI_file,freq_fi
     for age in ages: 
         df_CDI=read.read_CDI_data_by_age(CDI_file, age, save_file=False)
         for algo in algos:    
-            if algo=='gold': 
-                df_algo=df_gold
-            else : 
-                tp=read.create_df_freq_by_algo_all_sub(path_res, sub, algo,unit, freq_file)
-                if evaluation=='true_positive': 
-                    df_algo=tp
-                elif evaluation=='recall':
-                    df_algo=pd.DataFrame(tp['Freq'+algo]).div(df_gold.Freqgold, axis='index') 
-                    df_algo['Type']=tp['Type']
+            #if algo=='gold': 
+                #df_algo=df_gold
+            #else:
+            tp=read.create_df_freq_by_algo_all_sub(path_res, sub, algo,unit, freq_file)
+            if evaluation=='true_positive': 
+                df_algo=tp
+            elif evaluation=='recall':
+                df_algo=pd.DataFrame(tp['Freq'+algo]).div(df_gold.Freqgold, axis='index') 
+                df_algo['Type']=tp['Type']
             if miss_inc :  # word not found b algo but are in the CDI also considered
                 df_CDI_gold=pd.merge(df_CDI, df_gold[['Type']], on=['Type'],how='inner')
                 df_data=pd.merge(df_CDI_gold, df_algo, on=['Type'], how='outer')

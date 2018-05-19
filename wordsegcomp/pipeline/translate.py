@@ -53,10 +53,10 @@ def build_phono_to_ortho_representative(d):
     """
     res ={}
     token_freq={}
-    for d_key,d_value in d.iteritems():
+    for d_key,d_value in d.items():
         value_max=0
         key_max = 'undefined'
-        for key, value in d_value.iteritems():
+        for key, value in d_value.items():
             if value > value_max:
                 value_max = value
                 key_max = key
@@ -90,9 +90,10 @@ def create_file_word_freq(path_res, dic, sub, algos,unit="syllable", freq_file="
             list_token=read.list_freq_token_per_algo(algo,SS,path_res,unit,freq_file)
             d={}
             for item in list_token:
-                if dic.has_key(item)==True:
+                if item in dic.keys():
                     d[item]=dic[item]
-            df_dic_token=pd.DataFrame(d.items(),columns=['phono', 'Type'])
+            df_dic_token=pd.DataFrame(list(d.items()),columns=['phono', 'Type']) 
+            df_dic_token.columns=['phono', 'Type']
             s=pd.merge(df_token, df_dic_token, how='inner', on=['phono'])
             del s['phono']
             s.drop_duplicates(subset='Type', keep='first',inplace=True)

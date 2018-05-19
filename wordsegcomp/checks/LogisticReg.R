@@ -3,8 +3,17 @@ library(readr)
 library(plyr)
 library(car)
 
-Logistic_nb_infant_algo_CDI=function(path_res, ages, algos, prop,infant_nb, unit, type_regression="linear")
+model_nb_infant_algo_CDI=function(path_res, ages, algos, prop,infant_nb, unit, type_regression="linear")
 {
+  # Computes the coefficient of determination with either a linear or a logistic regression.
+  #
+  # Args:
+  #   path_res: absolute path containing the folder of results. The architecture is then the following : path_res/algo/unit/freq-words.txt
+  #   ages: vector of age range
+  #   algos: vector of algorithm's name (must be the same than the folder name of algorithms)
+  #   infant_nb : path of the file containing
+  # Returns:
+  #   The sample covariance between x and y.
   #prop <- read_delim(infant_prop, delim="\t", escape_double = FALSE, trim_ws = TRUE)
   nb=read.csv(infant_nb, sep=";",header = TRUE)
   
@@ -83,5 +92,5 @@ setwd('/Users/elinlarsen/Documents/CDSwordSeg_Pipeline/results/res-brent-CDS/Ana
 PropUnderstandCDI <- read_delim("~/Documents/CDSwordSeg_Pipeline/results/res-brent-CDS/Analysis_algos_CDI/PropUnderstandCDI.csv", 
                                +     "\t", escape_double = FALSE, trim_ws = TRUE)
 
-df_R2_syl_log=Logistic_nb_infant_algo_CDI(path_res, ages=c(8:18), algos=ALGOS, PropUnderstandCDI,infant_nb=nb_i_file, unit='syllable', type_regression="linear")
+df_R2_syl_log=mode_nb_infant_algo_CDI(path_res, ages=c(8:18), algos=ALGOS, PropUnderstandCDI,infant_nb=nb_i_file, unit='syllable', type_regression="linear")
 
