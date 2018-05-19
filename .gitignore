@@ -1,10 +1,14 @@
 .Rproj.user
-.Rhistory
-.RData
+wordsegcomp/.Rhistory
+wordsegcomp/Icon
+wordsegcomp/.DS_Store
+wordsegcomp/.ipynb_checkpoints
+
+
 .Ruserdata
 
-WordSegComprehension/wordsegcomp/R_pipeline/website
-WordSegComprehension/wordsegcomp/pipeline/__pycache__/
+wordsegcomp/R_pipeline/website
+wordsegcomp/pipeline/__pycache__/
 *.ipynb
 *.cpython-36.pyc
 /Icon\r
@@ -12,5 +16,5 @@ WordSegComprehension/wordsegcomp/pipeline/__pycache__/
 *.Rhistory
 
 __pycache__/
-WordSegComprehension/wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
-WordSegComprehension/wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
+/wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
+/wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
