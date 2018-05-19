@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+WordSegComprehension/wordsegcomp/R_pipeline/website
+WordSegComprehension/wordsegcomp/pipeline/__pycache__/
+*.ipynb
+*.cpython-36.pyc
+/Icon\r
+*.DS_Store
+*.Rhistory
+
+__pycache__/
+IDS_CDS_ADS_cache/
+IDS_CDS_ADS_files/
