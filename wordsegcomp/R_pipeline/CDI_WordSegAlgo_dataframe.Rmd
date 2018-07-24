@@ -1,0 +1,133 @@
+---
+title: "CDI_WordSegAlgo_dataframe"
+author: "Elin Larsen"
+date: "19/05/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=FALSE, echo=TRUE, warning=FALSE, message=FALSE)
+source("util.R")
+```
+
+
+##Paths to modify
+```{r paths}
+path_to_CDI="/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/engl"
+res='/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordSeg_Pipeline/results/'
+path_to_figures="/Users/elinlarsen/GoogleDrive/PhD_elin/our_papers/CogSci2018/figures/mai2018/"
+
+#depends on the data architecture 
+res_brent=paste(res, 'Brent/full_corpus', sep='/')
+res_providence=paste(res, 'Providence/full_corpus', sep='/')
+res_buckeye=paste(res, 'buckeye', sep='/')
+```
+
+
+##For quick reproduction : skip this and go to the chunk load cdi-algo-data
+else clean environment, modify paths and clean each script
+
+
+### ALGOS parameters
+```{r}
+algos=c('tp/relativeforward', 'tp/absoluteforward', 'tp/relativebackward', 'tp/absolutebackward','dibs','puddle','ag')
+unit=c("phoneme", "syllable")
+Asyll=paste(algos,"syllable", sep="/")
+Aph=paste(algos,"phoneme", sep="/")
+AU=c(Asyll, Aph)
+AU_g=list.append(AU,"gold")
+```
+
+### Data processing
+```{r algos}
+brent=read_gold(res_brent, "brent")
+providence=read_gold(res_providence, "providence")
+buckeye=read_gold(res_buckeye, "buckeye")
+
+freq_algos_brent=read_algorithms_results(res_brent, algos, res_brent, 'brent')
+freq_algos_providence=read_algorithms_results(res_providence , algos, res_providence, 'providence')
+freq_algos_buckeye=read_algorithms_results(res_buckeye,  algos, res_buckeye, 'buckeye')
+```
+
+```{r table_algo}
+freq_all=dplyr::bind_rows(brent, freq_algos_brent, providence, freq_algos_providence , buckeye, freq_algos_buckeye)%>%
+  mutate(uni_lemma=Type)%>%
+  select(-Type)
+
+#knitr::kable(head(freq_all), format = "html")%>%
+#kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+***Check number of words per algos***
+```{r nb_types_per_algos}
+for (a in AU_g)
+{ 
+  X<-freq_all%>%
+  filter(au==a, corpus=="brent")%>%
+  group_by(uni_lemma, algos)%>%
+  n_groups()
+  print(paste(a, X, sep= ": "))
+  }
+
+```
+
+
+###Stemming : -> FOR LATER ANALYSIS
+Not working for now
+```{r stemming}
+#freq_all$lemma=stem(freq_all$Type, "english") 
+```
+
+```{r cdi, echo=FALSE, message=FALSE, results='asis'}
+#OLD / Load reshaped CDI database with CDI_Data.Rmd script
+# destfile= path_to_CDI_reshape=paste(path_to_CDI, "/Prop_all_forms_reshaped.csv", sep="")
+ #scriptfile <- "/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/WordSegComprehension/wordsegcomp/CDI/reshape_CDI_Data.R"
+ #if (!file.exists(destfile))
+   #{
+    #source(scriptfile)
+    #print("running reshape_CDI_Data.R")
+ #}
+#d_prop =read_delim(destfile, "\t", escape_double = FALSE, trim_ws = TRUE)
+```
+
+###last version of CDI from Braginsky 2018
+```{r uni_prop_cdi}
+load(paste('/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/', 'uni_prop_data.RData', sep="/"),  .GlobalEnv)
+
+new_prop<-uni_prop_data%>%
+  filter(language=="English (American)")
+
+#linguistics<-d_prop%>%
+  #mutate(uni_lemma=Type, measure=form)%>%
+  #select(-prop)
+  
+#linguistics$measure[linguistics$measure=="WG_production"]="produces"
+#linguistics$measure[linguistics$measure=="WS_production"]="produces"
+#linguistics$measure[linguistics$measure=="WG_comprehension"]="understands"
+
+#new_prop=merge(new_prop_eng, linguistics, by=c("uni_lemma", "age", "measure"))
+head(new_prop)
+```
+
+Number of uni_lemma types 
+```{r}
+new_prop%>%
+group_by(uni_lemma)%>%
+  n_groups()
+```
+
+### Merge cdi data and algo data by TYPE
+```{r data}
+DATA=merge(new_prop,freq_all)%>%
+  select(-items)
+DATA$log_freq=log(DATA$freq_smoothed)
+DATA$log_count=log(DATA$count+1)
+
+knitr::kable(head(DATA), format = "html")%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+Save this temporary data : 
+```{r save_cdi_algo_data}
+save(DATA, file = paste(res, "/braginsky_cdi_algo_combined.RData",sep=""))
+```

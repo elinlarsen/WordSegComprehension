@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE)
+source("../util.R")
+```
+
+###Paths to modify
+```{r paths}
+path_to_CDI="/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/english/"
+res="/Users/elinlarsen/Documents/XSSeg/xsseg/results/"
+
+corpus_name="fernald"
+path_to_figures="/Users/elinlarsen/GoogleDrive/PhD_elin/Conference/L2HM2018/figures/"
+res_corpus=paste(res, corpus_name, '/utterances/', sep='/')
+
+algos=c('baseline0', 'baseline1','tp/relativeforward', 'tp/absoluteforward', 'tp/relativebackward', 'tp/absolutebackward','dibs','puddle','XS_segmentation', 'gold')
+
+#algos=c('XS_segmentation', 'gold')
+
+Asyll=paste(algos,"syllable", sep="/")
+#AU_g=list.append(Asyll,"gold")
+
+unit=c("syllable")
+```
+
+
+```{r res-algos}
+#rollins=read_gold(res_corpus, "rollins")
+freq_all=read_algorithms_results(res_corpus, algos, res_corpus, corpus_name, unit=c("syllable"))
+freq_all=freq_all%>%
+  mutate(uni_lemma=Type)
+head(freq_all)
+```
+
+
+###last version of CDI from Braginsky 2018
+```{r uni_prop_cdi}
+load(paste('/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordseg_Pipeline/CDI/', 'uni_prop_data.RData', sep="/"),  .GlobalEnv)
+
+new_prop<-uni_prop_data%>%
+  filter(language=="English (American)")
+head(new_prop)
+```
+
+### Merge cdi data and algo data by TYPE
+```{r data}
+DATA=merge(new_prop,freq_all)%>%
+  select(-items)
+DATA$log_freq=log(DATA$freq_smoothed)
+DATA$log_count=log(DATA$count+1)
+
+knitr::kable(head(DATA), format = "html")%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+```{r R2} 
+# in linear_models.R
+source("util.R")
+R2_comp=R2_by_parameters(DATA, seq(8,18), Asyll, corpus_name, "understands")
+R2_prod=R2_by_parameters(DATA, seq(8,30), Asyll, corpus_name, "produces")
+```
+
+```{r}
+R2=rbind(R2_comp, R2_prod)
+file_res=paste(res_corpus, "R2.txt")
+write.table(R2, file_res, sep="\t",col.names = TRUE, row.names = FALSE)
+```
+
+Visualising results
+```{r vis, fig.width=8, fig.height=6}
+path_file=paste(res, corpus_name, "R2_both_measures_XS.png", sep="/")
+png(path_file, width = 1100, height = 700)
+filtered=c("gold/syllable","tp/relativeforward/syllable", "tp/absoluteforward/syllable", "XS_segmentation/syllable", "baseline0/syllable", "baseline1/syllable", "puddle/syllable", "dibs/syllable")
+
+#ggplot(R2_comp%>%filter(au%in% filtered) , aes(as.factor(age), R2, colour=au, shape=corpus))+
+  #geom_point(size=4, alpha=0.9) +
+  #facet_grid(. ~ corpus)+
+  #theme_bw(base_size=16) 
+#
+ggplot(R2%>%filter(au%in% filtered)  , aes(age, R2, colour=factor(au)))+
+  geom_point(size=4, alpha=0.9) +
+  labs(color = "Algorithms")+
+  facet_grid( ~ measure)+
+  theme_bw(base_size=26) +
+  theme(legend.position="top")
+
+dev.off()
+```

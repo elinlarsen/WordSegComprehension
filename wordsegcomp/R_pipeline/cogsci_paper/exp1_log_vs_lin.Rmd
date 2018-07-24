@@ -1,0 +1,297 @@
+---
+title: "exp1_basic_R2correlation"
+author: "Elin Larsen"
+date: "06/06/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE)
+source("../util.R")
+```
+
+###Paths to modify
+```{r paths}
+res='/Users/elinlarsen/GoogleDrive/PhD_elin/Projets/CDSwordSeg_Pipeline/results/'
+path_to_fig='/Users/elinlarsen/GoogleDrive/PhD_elin/our_papers/CogSci2018/figures/july2018/'
+
+
+
+corpus_name="brent"
+res_corpus=paste(res, corpus_name, 'full_corpus', sep='/')
+
+#algos=c('baseline0', 'baseline1','tp/relativeforward', 'tp/absoluteforward', 'tp/relativebackward', 'tp/absolutebackward','dibs','puddle','XS_segmentation', 'gold')
+
+algos=c('baseline0', 'baseline1','tp/relativeforward', 'tp/absoluteforward', 'tp/relativebackward', 'tp/absolutebackward','dibs','puddle','XS_segmentation', 'gold')
+
+
+#algos=c('XS_segmentation', 'gold')
+
+Asyll=paste(algos,"syllable", sep="/")
+#AU_g=list.append(Asyll,"gold")
+
+unit=c("syllable")
+```
+
+
+###Load data frame containing word segmentation algorithm results and CDI data CLEAN
+Look at the CDI_WordSegALgo_dataframe to know how this data have been merged 
+
+```{r load_cdi_algo_data}
+load(file = paste(res, "/braginsky_cdi_algo_combined.RData",sep=""), envir = globalenv())
+# DATA is created
+```
+
+## Checking models assumptions 
+
+### Model : linear or logistic ?
+We plan to look at the correlation between proportion of infant reported comprehension (Y) and a proxy for the lexicon *learned* by a word segmentation algorithms (X). 
+X can either be : 
+
+*  the logarithm of word count of words corrrectly segmentated by algorithms. If words belong to the corpus but have not been segmented, the log is by default (convention) 0.
+*  the logarithm of log of *laplace smoothed* frequency of words corrrectly segmentated. 
+    + Why frequency ? It is necessary if we plan to compare different corpora containing different different word statistics 
+    + Why laplace smoothed ? Enables us to take into account words that have not been segmented by algorithms but are present in the corpus and take into account 
+
+> **Note** : By correctly segmented, we mean that, for each word in the phonologized segmented corpus, we check if they belong to the dictionnary of orthographic-phonemic word from the gold corpus 
+
+> We start here by looking at log laplace smoothed word frequency
+
+
+#### Assumptions for a linear regression
+There are four principal assumptions which justify the use of linear regression models for purposes of inference or prediction:
+
+1. **linearity and additivity of the relationship between dependent and independent variables**:
+
+    (a) The expected value of dependent variable is a straight-line function of each independent variable, holding the others fixed.
+
+    (b) The slope of that line does not depend on the values of the other variables.
+
+    (c)  The effects of different independent variables on the expected value of the dependent variable are additive.
+
+2. **statistical independence of the errors** (in particular, no correlation between consecutive errors in the case of time series data)
+
+3. **homoscedasticity (constant variance) of the errors**
+
+    (a) versus time (in the case of time series data)
+
+    (b) versus the predictions
+
+    (c) versus any independent variable
+
+4. **normality of the error distribution.**
+
+#### Are they verified ?
+**Params:  a specific age, algo==gold, unit, corpus**
+```{r param}
+a=13
+A='gold'
+c='brent'
+f='understands'
+d<-DATA%>%
+  filter(au==A,  age==a, corpus==c, measure==f)
+head(d)
+```
+
+```{r linear-assumption-count}
+linear=lm(prop ~  log(freq_smoothed), data=d)
+gvlma::gvlma(linear)
+par(mfrow=c(2,2))
+plot(linear)
+```
+1.  **linearity and additivity of the relationship between dependent and independent variables**:
+
+    (a) Well that's the model... and it is clearly not satistied since we only have 14% of the variance explained by the model...
+
+    (b) and (c)  We only have one predictor
+
+2. **statistical independence of the errors** 
+
+> The durbinWatsonTest computes residual autocorrelations and generalized Durbin-Watson statistics and their bootstrapped p-values. dwt is an abbreviation for durbinWatsonTest.
+
+```{r}
+durbinWatsonTest(linear)
+```
+3. **homoscedasticity (constant variance) of the errors** : 
+
+Let's plot studentized residuals vs. fitted values 
+```{r}
+spreadLevelPlot(linear)
+```
+    (a) No time here
+
+    (b) the residual versus fitted values plot shows that the variance of errors in the prediction are quite not the same since they are not equally distributed across the zero line
+
+    (c) only one predictor
+
+4. **normality of the error distribution.**
+
+The Q-Q plot shows that there are some outliers but globally errors are normallly distributed
+```{r}
+qqPlot(linear, main="QQ Plot")
+```
+
+
+
+**Assessing outliers**
+```{r}
+outlierTest(linear) # Bonferonni p-value for most extreme obs
+```
+
+
+
+#### Assumptions for a logistic regression
+[link](http://www.statisticssolutions.com/assumptions-of-logistic-regression/)
+
+**Dissimilarities with linear regression**
+
+1.  logistic regression does not require a linear relationship between the dependent and independent variables.  
+2.  the error terms (residuals) do not need to be normally distributed. 
+3.  homoscedasticity is not required.  
+4.  the dependent variable in logistic regression is not measured on an interval or ratio scale.
+
+**Assumptions**
+
+Logistic regression requires :
+
+1.  the dependent variable to be 
+    * to be binary for binary log regression 
+    * ordinal for ordinal log regression
+  
+2.  **the observations to be independent of each other**.  In other words, the observations should not come from repeated measurements or matched data.
+
+3.  **there to be little or no multicollinearity among the independent variables.** This means that the independent variables should not be too highly correlated with each other.
+
+4.  **that the independent variables are linearly related to the log odds.**
+
+5.  **logistic regression typically requires a large sample size. **  A general guideline is that you need at minimum of 10 cases with the least frequent outcome for each independent variable in your model. For example, if you have 5 independent variables and the expected probability of your least frequent outcome is .10, then you would need a minimum sample size of 500 (10*5 / .10).
+
+
+
+#### Are they verified ?
+The log model is predicting for each child whether or not he understand a word
+
+```{r log-model}
+library(caret)
+d<-d%>%
+  mutate(logit = log(prop/(1-prop)))
+
+##### Model
+log_mod=glm(cbind(num_true, num_false) ~  log(freq_smoothed), data=d,family = "binomial" )
+nullmodel <- glm(cbind(num_true, num_false)~1, data=d,family="binomial")
+
+
+df_R=1-logLik(log_mod)/logLik(nullmodel)
+print(df_R)
+
+```
+
+##### K-Fold Cross Validation
+return a vector of 4 elements, one of them is called delta that is a vector of 2 elements
+1. the raw cross-validation estimate of prediction error. 
+2. is the adjusted cross-validation estimate. The adjustment is designed to compensate for the bias introduced by not using leave-one-out cross-validation.
+
+```{r}
+cv.glm(d,log_mod)$delta[1] # leave one out
+cv.glm(d, log_mod, K=10)$delta[1] #1O fold cross validation
+```
+#### 1. Binary assumption : 
+OK : understands (1) or not (0)
+
+#### 2. Independent observations :  
+are not repeated measure
+
+#### 3. Weak multicollinearity between predictors
+OK :  we only have one predictor
+
+#### 4. Linearity assumption 
+Some outliers : should we remove them ?? Don't think so :  that's what is interesting
+```{r log-assumption-freq}
+ggplot(d, aes(log(freq_smoothed), logit))+
+  geom_point(size = 0.5, alpha = 0.5) +
+  #geom_smooth(method = "loess", size = 1) + 
+  geom_smooth(method = "gam", size = 1) + 
+  geom_text(aes(label=uni_lemma),hjust=0, vjust=-0.5, size=2)+
+  #geom_text(aes(label=ifelse(log(freq_smoothed)>-6,as.character(uni_lemma),'')),hjust=0,vjust=-0.5, size=2.5)+
+  theme_bw()
+```
+
+#### 5. Large sample assumptions
+Number of words : 
+```{r}
+length(d$uni_lemma)
+```
+
+
+### Conclusion : (finally)
+Logistic regression seems to better fit model assumptions than the linear regression
+
+## Summary of the logistic regression 
+```{r sum}
+summary(log_mod)
+```
+
+## Fig1 : Plotting baseline logistic correlation
+```{r log-assumption-freq}
+ggplot(d, aes(log(freq_smoothed), logit))+
+  geom_point(size = 0.5, alpha = 0.5) +
+  #geom_smooth(method = "loess", size = 1) + 
+  geom_smooth(method = "gam", size = 1) + 
+  geom_text(aes(label=uni_lemma),hjust=0, vjust=-0.5, size=2)+
+  #geom_text(aes(label=ifelse(log(freq_smoothed)>-6,as.character(uni_lemma),'')),hjust=0,vjust=-0.5, size=2.5)+
+  theme_bw()
+```
+
+
+## Confusion matrix : looking at predictions with K cross-validation 
+
+To use the ROC library, I need binary data, I synthesize those from the counts (useful when data only has count and not proper binary data like for the Japanese CDI data )
+```{r roc}
+library(ROCR) 
+sim_binary_data<-function(d)
+{
+  L <- dim(d)[1]
+  df <- d%>%
+  select(uni_lemma, prop, freq_smoothed)
+  df <- df[rep(1:L, each= 2),] # one row for died and one for didn't
+  df$understands <- rep(c(0L,1L), times=L) # create binary outcome for survival
+  df$weight <- c(rbind(d$num_true, d$num_false)) # assign weights
+  df <- df[rep(1:nrow(df), times = df$weight),]
+  return(df)
+
+}
+
+```
+
+Splitting the data between training and testing datasets. 
+TRain and test set : not necessary if we do leave one out or cross validation later
+```{r train}
+library(pROC)
+n_folds <- 5
+folds_i <- cut(seq(1,nrow(d)),breaks=n_folds,labels=FALSE)
+
+auc_table <- matrix(NA, nrow = n_folds, ncol = 1)
+for (k in 1:n_folds) 
+{
+    test_i <- which(folds_i == k)
+    train <- d[-test_i, ]
+    Train=sim_binary_data(train)
+    test <- d[test_i, ]
+    Test=sim_binary_data(test)
+
+    model <- glm(understands  ~ freq_smoothed, data=Train, family="binomial")# model fitting with data in training dataset
+    pred= predict(model, newdata=Test, type="response") # predictions made by the model using the data in the testing dataset
+    auc_table[k,1 ] <-pROC::auc(pred, Test$understands)
+}
+
+auc_table
+
+```
+
+## Fig2 : Plotting F-scores against R2
+
+```{r}
+Logistic_nb_infant_algo_CDI=function(DATA, AGES, ALGOS, CORPUS, MEASURE)
+```
+
+
