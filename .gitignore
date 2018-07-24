@@ -1,3 +1,4 @@
+
 .Rproj.user
 wordsegcomp/.Rhistory
 wordsegcomp/Icon
@@ -15,11 +16,14 @@ wordsegcomp/.ipynb_checkpoints
 */*/*.DS_Store
 
 Icon
+/wordsegcomp/Icon
 /wordsegcomp/R_pipeline/Icon
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
 /wordsegcomp/R_pipeline/.RData
 /wordsegcomp/R_pipeline/website
+
+/wordsegcomp/pipeline/Icon
 /wordsegcomp/pipeline/__pycache__/
 /wordsegcomp/pipeline/__pycache__/*.pyc
 /wordsegcomp/examples/english/Brent_Siskind/.RData
