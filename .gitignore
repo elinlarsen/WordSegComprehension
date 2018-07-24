@@ -13,17 +13,13 @@ wordsegcomp/.ipynb_checkpoints
 *.DS_Store
 */*.DS_Store
 */*/*.DS_Store
-Icon
 
-__pycache__/*.pyc
-*/__pycache__/*.pyc
-*/*/__pycache__/*.pyc
-*/*/*/__pycache__/*.pyc
 
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
 /wordsegcomp/R_pipeline/.RData
 /wordsegcomp/R_pipeline/website
 /wordsegcomp/pipeline/__pycache__/
+/wordsegcomp/pipeline/__pycache__/*.pyc
 /wordsegcomp/examples/english/Brent_Siskind/.RData
 /wordsegcomp/R_pipeline/*.html
