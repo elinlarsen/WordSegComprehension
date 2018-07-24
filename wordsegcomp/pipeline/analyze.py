@@ -24,9 +24,9 @@ def count_lines_corpus(corpus_file):
     print('number of non-blank lines found: %d' % non_blank_count)
     return(non_blank_count)
 
-def create_freq_top_gold(path_res, subs):
+def create_freq_top_gold(path_gold, path_res, subs):
     for SS in subs:
-        path=path_res+"/"+SS+"/"+"gold"+"/gold.txt"
+        path=path_gold+"/"+SS+"/gold.txt"
         df=freq_token_in_corpus(path)
         path_out=path_res+"/"+SS+"/"+"gold"+"/freq-top.txt"
         df.to_csv(path_out, sep='\t', index=False)
@@ -40,10 +40,15 @@ def freq_token_in_corpus(path_file):
         c.update([word])
     df=pd.DataFrame.from_dict(c, orient='index')
     df.reset_index(level=0, inplace=True)
-    df.columns=['Type', 'Freqgold']
-    df.sort_values('Freqgold', ascending=False, inplace=True)
-    df.reset_index(drop=True, inplace=True)
-    return(df)
+    df.columns=['Type', 'Freq']
+    #cols = df.columns.tolist()
+    #cols=cols[1]+cols[0]
+    ddf = df[['Freq', 'Type']]
+    ddf.sort_values('Freq', ascending=False, inplace=True)
+    
+    ddf.reset_index(drop=True, inplace=True)
+    return(ddf)
+
 
 
 ######################### SPLIT BETWEEN BAD AND WELL SEGMENTED TOKEN

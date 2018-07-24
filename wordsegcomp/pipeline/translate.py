@@ -86,7 +86,7 @@ def create_file_word_freq(path_res, dic, sub, algos,unit="syllable", freq_file="
         for algo in algos:
             res_folder=path_res+"/"+SS+"/"+algo+ "/" +unit
             path=res_folder +freq_file
-            df_token=pd.read_table(path,sep=None, header=None, names=('Freq','phono'),  index_col=None)
+            df_token=pd.read_table(path,sep='\s+', header=None, names=('Freq','phono'),  index_col=None)
             list_token=read.list_freq_token_per_algo(algo,SS,path_res,unit,freq_file)
             d={}
             for item in list_token:
