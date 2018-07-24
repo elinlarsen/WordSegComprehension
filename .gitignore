@@ -15,10 +15,10 @@ wordsegcomp/.ipynb_checkpoints
 */*/*.DS_Store
 Icon
 
-__pycache__/
-*/__pycache__/
-*/*/__pycache__/
-*/*/*/__pycache__/
+__pycache__/*.pyc
+*/__pycache__/*.pyc
+*/*/__pycache__/*.pyc
+*/*/*/__pycache__/*.pyc
 
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
