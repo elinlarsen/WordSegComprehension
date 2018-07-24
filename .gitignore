@@ -14,7 +14,8 @@ wordsegcomp/.ipynb_checkpoints
 */*.DS_Store
 */*/*.DS_Store
 
-
+Icon
+/wordsegcomp/R_pipeline/Icon
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_cache/
 /wordsegcomp/R_pipeline/IDS_CDS_ADS_files/
 /wordsegcomp/R_pipeline/.RData
